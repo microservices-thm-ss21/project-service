@@ -20,8 +20,8 @@ class ProjectDbService(@Autowired val projectRepo: ProjectRepository) {
     }
 
     fun updateProject(id: Long, projectDTO: ProjectDTO): Mono<Project> {
-        val user = projectRepo.findById(id)
-        return user.map { it.applyProjectDTO(projectDTO) }
+        val project = projectRepo.findById(id)
+        return project.map { it.applyProjectDTO(projectDTO) }
     }
 
     fun deleteProject(id: Long): Mono<Void> {
