@@ -4,16 +4,17 @@ import de.thm.mni.microservices.gruppe6.template.model.message.ProjectDTO
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table
 import java.time.LocalDateTime
+import java.util.*
 
 @Table("projects")
 data class Project(
-    @Id var id: Long? = null,
+    @Id var id: UUID?,
     var name: String,
     var createTime: LocalDateTime,
 ) {
-    constructor(id: Long, projectDTO: ProjectDTO): this(
-         id
-        ,projectDTO.name!!
+    constructor(id: UUID?, projectDTO: ProjectDTO): this(
+        id,
+        projectDTO.name!!
         ,LocalDateTime.now()
     )
 }

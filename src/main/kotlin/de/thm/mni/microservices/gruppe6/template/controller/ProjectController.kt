@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.util.*
 
 @RestController
 @RequestMapping("/api/projects")
@@ -19,8 +20,8 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
     fun putProject(@RequestBody projectDTO: ProjectDTO): Mono<Project> = projectService.putProject(projectDTO)
 
     @PostMapping("/{id}")
-    fun updateProject(@PathVariable id: Long, @RequestBody projectDTO: ProjectDTO) = projectService.updateProject(id, projectDTO)
+    fun updateProject(@PathVariable id: UUID, @RequestBody projectDTO: ProjectDTO) = projectService.updateProject(id, projectDTO)
 
     @DeleteMapping("/{id}")
-    fun deleteProject(@PathVariable id: Long) = projectService.deleteProject(id)
+    fun deleteProject(@PathVariable id: UUID) = projectService.deleteProject(id)
 }
