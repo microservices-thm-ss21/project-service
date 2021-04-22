@@ -16,7 +16,7 @@ class ProjectDbService(@Autowired val projectRepo: ProjectRepository) {
     fun getAllProjects(): Flux<Project> = projectRepo.findAll()
 
     fun putProject(projectDTO: ProjectDTO): Mono<Project> {
-        return projectRepo.save(Project(UUID.randomUUID(), projectDTO))
+        return projectRepo.save(Project(null, projectDTO))
     }
 
     fun updateProject(id: UUID, projectDTO: ProjectDTO): Mono<Project> {

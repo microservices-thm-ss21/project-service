@@ -1,7 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 create table projects (
-    id uuid primary key,
+    id uuid DEFAULT uuid_generate_v4(),
     name varchar(50),
     create_time timestamp
 );
