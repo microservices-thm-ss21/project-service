@@ -1,7 +1,10 @@
 package de.thm.mni.microservices.gruppe6.template.service
 
 
+import de.thm.mni.microservices.gruppe6.template.model.message.MemberDTO
 import de.thm.mni.microservices.gruppe6.template.model.message.ProjectDTO
+import de.thm.mni.microservices.gruppe6.template.model.persistence.Member
+import de.thm.mni.microservices.gruppe6.template.model.persistence.MemberRepository
 import de.thm.mni.microservices.gruppe6.template.model.persistence.Project
 import de.thm.mni.microservices.gruppe6.template.model.persistence.ProjectRepository
 import org.springframework.beans.factory.annotation.Autowired
@@ -12,7 +15,8 @@ import reactor.core.publisher.Mono
 import java.util.*
 
 @Component
-class ProjectDbService(@Autowired val projectRepo: ProjectRepository) {
+class ProjectDbService(@Autowired val projectRepo: ProjectRepository, @Autowired val memberRepo: MemberRepository) {
+
     fun getAllProjects(): Flux<Project> = projectRepo.findAll()
 
     fun putProject(projectDTO: ProjectDTO): Mono<Project> {
@@ -27,6 +31,19 @@ class ProjectDbService(@Autowired val projectRepo: ProjectRepository) {
     fun deleteProject(id: UUID): Mono<Void> {
         return projectRepo.deleteById(id)
     }
+
+    fun getAllMembers(id: UUID): Flux<Member> = memberRepo.findAll()
+
+    fun putMembers(id: UUID, memberDTO: MemberDTO): Mono<Project> {
+        memberDTO.members?.forEach { m ->
+            memberRepo.save(Member(id, m.key, m.value))
+        }
+        return projectRepo.findById(id)
+    }
+
+    //@toDo: deleteMembers
+    //@toDo: updateMembers
+
 
     fun Project.applyProjectDTO(projectDTO: ProjectDTO): Project {
         this.name = projectDTO.name!!

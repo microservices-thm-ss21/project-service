@@ -10,12 +10,14 @@ import java.util.*
 data class Project(
     @Id var id: UUID?,
     var name: String,
+    var creator_id: UUID?,
     var createTime: LocalDateTime,
 ) {
     constructor(id: UUID?, projectDTO: ProjectDTO): this(
         id,
-        projectDTO.name!!
-        ,LocalDateTime.now()
+        projectDTO.name!!,
+        projectDTO.creator_id,
+        LocalDateTime.now()
     )
 }
 
