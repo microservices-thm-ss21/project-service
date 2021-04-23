@@ -8,16 +8,16 @@ import java.util.*
 
 @Table("projects")
 data class Project(
-    @Id var id: UUID?,
-    var name: String,
-    var creator_id: UUID?,
-    var createTime: LocalDateTime,
+        @Id var id: UUID?,
+        var name: String,
+        var creator_id: UUID?,
+        var createTime: LocalDateTime,
 ) {
-    constructor(id: UUID?, projectDTO: ProjectDTO): this(
-        id,
-        projectDTO.name!!,
-        projectDTO.creator_id,
-        LocalDateTime.now()
+    constructor(id: UUID?, projectDTO: ProjectDTO) : this(
+            id,
+            projectDTO.name!!,
+            projectDTO.creator_id,
+            LocalDateTime.now()
     )
 }
 

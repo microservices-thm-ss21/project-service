@@ -8,4 +8,5 @@ import java.util.*
 class ProjectDTO {
     var name: String? = null
     var creator_id: UUID? = null
+    var members: Map<UUID, String>? = null //Key=User-Id Value=Role
 }

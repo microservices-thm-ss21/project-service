@@ -1,7 +1,5 @@
 package de.thm.mni.microservices.gruppe6.template.service
 
-
-import de.thm.mni.microservices.gruppe6.template.model.message.MemberDTO
 import de.thm.mni.microservices.gruppe6.template.model.message.ProjectDTO
 import de.thm.mni.microservices.gruppe6.template.model.persistence.Member
 import de.thm.mni.microservices.gruppe6.template.model.persistence.MemberRepository
@@ -17,36 +15,75 @@ import java.util.*
 @Component
 class ProjectDbService(@Autowired val projectRepo: ProjectRepository, @Autowired val memberRepo: MemberRepository) {
 
+    /**
+     * returns all stores projects
+     */
     fun getAllProjects(): Flux<Project> = projectRepo.findAll()
 
+    /**
+     * creates new project and stores all given members
+     * @toDo No error message but no members are created
+     */
     fun putProject(projectDTO: ProjectDTO): Mono<Project> {
-        return projectRepo.save(Project(null, projectDTO))
+        val project = projectRepo.save(Project(null, projectDTO))
+        project.map {
+            it.id?.let { id -> putMembers(id, projectDTO) }
+        }
+        return project
     }
 
+    /**
+     * Updates project
+     * @param id: project id
+     */
     fun updateProject(id: UUID, projectDTO: ProjectDTO): Mono<Project> {
         val project = projectRepo.findById(id)
         return project.map { it.applyProjectDTO(projectDTO) }
     }
 
+    /**
+     * Deletes project by id
+     * @param id: project id
+     */
     fun deleteProject(id: UUID): Mono<Void> {
         return projectRepo.deleteById(id)
     }
 
-    fun getAllMembers(id: UUID): Flux<Member> = memberRepo.findAll()
+    /**
+     * Gets all Members of a given Project id
+     * @param id: project id
+     */
+    fun getMembers(id: UUID): Flux<Member> = memberRepo.findAll().filter { it.project_id == id }
 
-    fun putMembers(id: UUID, memberDTO: MemberDTO): Mono<Project> {
-        memberDTO.members?.forEach { m ->
+    /**
+     * Stores all given members
+     * @param id: project id
+     * @toDo No error message but no members are created
+     */
+    fun putMembers(id: UUID, projectDTO: ProjectDTO): Mono<Project> {
+        projectDTO.members?.forEach { m ->
             memberRepo.save(Member(id, m.key, m.value))
         }
         return projectRepo.findById(id)
     }
 
-    //@toDo: deleteMembers
-    //@toDo: updateMembers
+    /**
+     * @toDo Not implemented
+     */
+    fun deleteMembers(id: UUID, projectDTO: ProjectDTO): Mono<Void> {
+        return memberRepo.deleteById(id)
+    }
 
+    /**
+     * @toDo Not implemented
+     */
+    fun updateMembers(id: UUID, projectDTO: ProjectDTO): Flux<Member> {
+        return memberRepo.findAll()
+    }
 
     fun Project.applyProjectDTO(projectDTO: ProjectDTO): Project {
         this.name = projectDTO.name!!
+        this.creator_id = projectDTO.creator_id!!
         return this
     }
 }
