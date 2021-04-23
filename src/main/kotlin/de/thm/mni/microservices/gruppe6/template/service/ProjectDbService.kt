@@ -22,7 +22,6 @@ class ProjectDbService(@Autowired val projectRepo: ProjectRepository, @Autowired
 
     /**
      * creates new project and stores all given members
-     * @toDo No error message but no members are created
      */
     fun putProject(projectDTO: ProjectDTO): Mono<Project> {
         val project = projectRepo.save(Project(null, projectDTO))
@@ -58,11 +57,10 @@ class ProjectDbService(@Autowired val projectRepo: ProjectRepository, @Autowired
     /**
      * Stores all given members
      * @param id: project id
-     * @toDo No error message but no members are created
      */
     fun putMembers(id: UUID, projectDTO: ProjectDTO): Mono<Project> {
         projectDTO.members?.forEach { m ->
-            memberRepo.save(Member(id, m.key, m.value))
+            memberRepo.save(m)
         }
         return projectRepo.findById(id)
     }
