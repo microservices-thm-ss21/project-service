@@ -58,10 +58,10 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
      * Deletes all given members of given project
      * @param id: project id
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id}/members")
     fun deleteMembers(@PathVariable id: UUID, @RequestBody projectDTO: ProjectDTO): Mono<Void> = projectService.deleteMembers(id, projectDTO)
 
 
-    @PutMapping("/{id}")
+    @PostMapping("/{id}/members")
     fun updateMembers(@PathVariable id: UUID, @RequestBody projectDTO: ProjectDTO): Flux<Member> = projectService.updateMembers(id, projectDTO)
 }

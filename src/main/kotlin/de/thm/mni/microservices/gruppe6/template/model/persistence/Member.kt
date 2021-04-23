@@ -8,5 +8,5 @@ import java.util.*
 data class Member(
         var project_id: UUID,
         var user_id: UUID,
-        var role: String
+        var project_role: String
 )
