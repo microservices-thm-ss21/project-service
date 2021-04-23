@@ -42,10 +42,9 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
 
     /**
      * Creates new members for a project with given id
-     * @param id: project id
      */
-    @PutMapping("/{id}/members")
-    fun putMembers(@PathVariable id: UUID, @RequestBody projectDTO: ProjectDTO): Mono<Project> = projectService.putMembers(id, projectDTO)
+    @PutMapping("/members")
+    fun putMembers(@RequestBody projectDTO: ProjectDTO): Flux<Member> = projectService.putMembers(projectDTO)
 
     /**
      * Get all members of a given project

@@ -25,9 +25,7 @@ class ProjectDbService(@Autowired val projectRepo: ProjectRepository, @Autowired
      */
     fun putProject(projectDTO: ProjectDTO): Mono<Project> {
         val project = projectRepo.save(Project(null, projectDTO))
-        project.map {
-            it.id?.let { id -> putMembers(id, projectDTO) }
-        }
+        putMembers(projectDTO)
         return project
     }
 
@@ -51,18 +49,20 @@ class ProjectDbService(@Autowired val projectRepo: ProjectRepository, @Autowired
     /**
      * Gets all Members of a given Project id
      * @param id: project id
+     * @toDo: Custom sql query to filter inside database to improve runtime
      */
     fun getMembers(id: UUID): Flux<Member> = memberRepo.findAll().filter { it.project_id == id }
 
     /**
      * Stores all given members
      * @param id: project id
+     * @toDo: Return value not implemented
      */
-    fun putMembers(id: UUID, projectDTO: ProjectDTO): Mono<Project> {
+    fun putMembers(projectDTO: ProjectDTO): Flux<Member> {
         projectDTO.members?.forEach { m ->
             memberRepo.save(m)
         }
-        return projectRepo.findById(id)
+        return Flux.empty()
     }
 
     /**
