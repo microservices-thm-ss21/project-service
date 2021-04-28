@@ -1,6 +1,5 @@
 package de.thm.mni.microservices.gruppe6.template.model.message
 
-import de.thm.mni.microservices.gruppe6.template.model.persistence.Member
 import java.util.*
 
 /**
@@ -8,6 +7,6 @@ import java.util.*
  */
 class ProjectDTO {
     var name: String? = null
-    var creator_id: UUID? = null
-    var members: List<Member>? = null
+    var creatorId: UUID? = null
+    var members: List<MemberDTO>? = null
 }

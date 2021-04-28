@@ -1,12 +1,12 @@
 package de.thm.mni.microservices.gruppe6.template.service
 
+import de.thm.mni.microservices.gruppe6.template.model.message.MemberDTO
 import de.thm.mni.microservices.gruppe6.template.model.message.ProjectDTO
 import de.thm.mni.microservices.gruppe6.template.model.persistence.Member
 import de.thm.mni.microservices.gruppe6.template.model.persistence.MemberRepository
 import de.thm.mni.microservices.gruppe6.template.model.persistence.Project
 import de.thm.mni.microservices.gruppe6.template.model.persistence.ProjectRepository
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -23,10 +23,9 @@ class ProjectDbService(@Autowired val projectRepo: ProjectRepository, @Autowired
     /**
      * creates new project and stores all given members
      */
-    fun putProject(projectDTO: ProjectDTO): Mono<Project> {
-        val project = projectRepo.save(Project(null, projectDTO))
-        putMembers(projectDTO)
-        return project
+    fun createProjectWithMembers(projectDTO: ProjectDTO): Mono<Project> {
+        val project = projectRepo.save(Project(projectDTO))
+        return project.doOnNext { createMembers(it.id!!, projectDTO.members) }
     }
 
     /**
@@ -35,7 +34,7 @@ class ProjectDbService(@Autowired val projectRepo: ProjectRepository, @Autowired
      */
     fun updateProject(id: UUID, projectDTO: ProjectDTO): Mono<Project> {
         val project = projectRepo.findById(id)
-        return project.map { it.applyProjectDTO(projectDTO) }
+        return project.map { it.applyProjectDTO(projectDTO) }.flatMap { projectRepo.save(it) }
     }
 
     /**
@@ -49,39 +48,48 @@ class ProjectDbService(@Autowired val projectRepo: ProjectRepository, @Autowired
     /**
      * Gets all Members of a given Project id
      * @param id: project id
-     * @toDo: Custom sql query to filter inside database to improve runtime
      */
-    fun getMembers(id: UUID): Flux<Member> = memberRepo.findAll().filter { it.project_id == id }
+    fun getMembers(id: UUID): Flux<Member> = memberRepo.getMembersByProjectID(id)
 
     /**
      * Stores all given members
      * @param id: project id
      * @toDo: Return value not implemented
      */
-    fun putMembers(projectDTO: ProjectDTO): Flux<Member> {
-        projectDTO.members?.forEach { m ->
-            memberRepo.save(m)
+    fun createMembers(project_id: UUID, members: List<MemberDTO>?): Flux<Member> {
+        if (members != null) {
+            return Flux.fromIterable(members).flatMap { memberDTO -> memberRepo.save(Member(project_id, memberDTO)) }
         }
         return Flux.empty()
     }
 
     /**
-     * @toDo Not implemented
+     * Delete all members of a project given its id
+     * @param id: project id
      */
-    fun deleteMembers(id: UUID, projectDTO: ProjectDTO): Mono<Void> {
-        return memberRepo.deleteById(id)
+    fun deleteAllMembers(id: UUID): Mono<Void> {
+        return memberRepo.deleteAllMembersByProjectID(id)
     }
 
     /**
-     * @toDo Not implemented
+     * Delete given members of a project given its id
+     * @param id: project id
      */
-    fun updateMembers(id: UUID, projectDTO: ProjectDTO): Flux<Member> {
-        return memberRepo.findAll()
+    fun deleteMembers(id: UUID, members: List<Member>): Mono<Void> {
+        return memberRepo.deleteMembersByProjectID(id, members.map { m -> m.userId })
+    }
+
+    /**
+     * Update the roles of members within a given project
+     * @param id: project id
+     */
+    fun updateMemberRoles(id: UUID, members: List<MemberDTO>): Flux<Member> {
+        return Flux.fromIterable(members).flatMap { memberRepo.findMemberOfProject(id, it.userId!!) }.zipWithIterable(members).flatMap { memberRepo.save(Member(it.t1.id, it.t1.projectId, it.t1.userId, it.t2.projectRole!!)) }
     }
 
     fun Project.applyProjectDTO(projectDTO: ProjectDTO): Project {
         this.name = projectDTO.name!!
-        this.creator_id = projectDTO.creator_id!!
+        this.creatorId = projectDTO.creatorId!!
         return this
     }
 }

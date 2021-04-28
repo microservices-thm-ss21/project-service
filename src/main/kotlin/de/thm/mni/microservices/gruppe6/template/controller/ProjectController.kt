@@ -1,5 +1,6 @@
 package de.thm.mni.microservices.gruppe6.template.controller
 
+import de.thm.mni.microservices.gruppe6.template.model.message.MemberDTO
 import de.thm.mni.microservices.gruppe6.template.model.message.ProjectDTO
 import de.thm.mni.microservices.gruppe6.template.model.persistence.Member
 import de.thm.mni.microservices.gruppe6.template.model.persistence.Project
@@ -23,8 +24,8 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
     /**
      * Creates a new project with members
      */
-    fun putProject(@RequestBody projectDTO: ProjectDTO): Mono<Project> = projectService.putProject(projectDTO)
     @PostMapping("")
+    fun createProject(@RequestBody projectDTO: ProjectDTO): Mono<Project> = projectService.createProjectWithMembers(projectDTO)
 
     /**
      * Updates project details with given id
@@ -43,8 +44,8 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
     /**
      * Creates new members for a project with given id
      */
-    fun putMembers(@RequestBody projectDTO: ProjectDTO): Flux<Member> = projectService.putMembers(projectDTO)
     @PostMapping("{id}/members")
+    fun createMembers(@PathVariable id: UUID, @RequestBody members: List<MemberDTO>): Flux<Member> = projectService.createMembers(id, members)
 
     /**
      * Get all members of a given project
@@ -57,10 +58,13 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
      * Deletes all given members of given project
      * @param id: project id
      */
-    fun deleteMembers(@PathVariable id: UUID, @RequestBody projectDTO: ProjectDTO): Mono<Void> = projectService.deleteMembers(id, projectDTO)
     @DeleteMapping("{id}/members")
+    fun deleteMembers(@PathVariable id: UUID): Mono<Void> = projectService.deleteAllMembers(id)
 
-
-    fun updateMembers(@PathVariable id: UUID, @RequestBody projectDTO: ProjectDTO): Flux<Member> = projectService.updateMembers(id, projectDTO)
+    /**
+     * Update the roles of members within a given project
+     * @param id: project id
+     */
     @PutMapping("{id}/members")
+    fun updateMembers(@PathVariable id: UUID, @RequestBody members: List<MemberDTO>): Flux<Member> = projectService.updateMemberRoles(id, members)
 }

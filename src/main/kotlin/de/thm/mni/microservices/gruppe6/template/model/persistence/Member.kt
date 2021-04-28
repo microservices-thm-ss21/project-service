@@ -1,12 +1,21 @@
 package de.thm.mni.microservices.gruppe6.template.model.persistence
 
+import de.thm.mni.microservices.gruppe6.template.model.message.MemberDTO
+import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table
 import java.util.*
 
-
 @Table("members")
 data class Member(
-        var project_id: UUID,
-        var user_id: UUID,
-        var project_role: String
-)
+        @Id var id: UUID?,
+        var projectId: UUID,
+        var userId: UUID,
+        var projectRole: String
+) {
+    constructor(projectId: UUID, memberDTO: MemberDTO) : this(
+            null,
+            projectId,
+            memberDTO.userId!!,
+            memberDTO.projectRole!!
+    )
+}
