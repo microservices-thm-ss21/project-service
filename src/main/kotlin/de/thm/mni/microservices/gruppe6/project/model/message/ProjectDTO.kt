@@ -1,4 +1,4 @@
-package de.thm.mni.microservices.gruppe6.template.model.message
+package de.thm.mni.microservices.gruppe6.project.model.message
 
 import java.util.*
 

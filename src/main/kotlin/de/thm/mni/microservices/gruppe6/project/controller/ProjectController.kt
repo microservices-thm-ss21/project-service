@@ -1,10 +1,10 @@
-package de.thm.mni.microservices.gruppe6.template.controller
+package de.thm.mni.microservices.gruppe6.project.controller
 
-import de.thm.mni.microservices.gruppe6.template.model.message.MemberDTO
-import de.thm.mni.microservices.gruppe6.template.model.message.ProjectDTO
-import de.thm.mni.microservices.gruppe6.template.model.persistence.Member
-import de.thm.mni.microservices.gruppe6.template.model.persistence.Project
-import de.thm.mni.microservices.gruppe6.template.service.ProjectDbService
+import de.thm.mni.microservices.gruppe6.project.model.message.MemberDTO
+import de.thm.mni.microservices.gruppe6.project.model.message.ProjectDTO
+import de.thm.mni.microservices.gruppe6.project.model.persistence.Member
+import de.thm.mni.microservices.gruppe6.project.model.persistence.Project
+import de.thm.mni.microservices.gruppe6.project.service.ProjectDbService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux

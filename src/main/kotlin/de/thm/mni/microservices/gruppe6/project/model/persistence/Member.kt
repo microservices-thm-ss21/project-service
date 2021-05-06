@@ -1,6 +1,6 @@
-package de.thm.mni.microservices.gruppe6.template.model.persistence
+package de.thm.mni.microservices.gruppe6.project.model.persistence
 
-import de.thm.mni.microservices.gruppe6.template.model.message.MemberDTO
+import de.thm.mni.microservices.gruppe6.project.model.message.MemberDTO
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table
 import java.util.*

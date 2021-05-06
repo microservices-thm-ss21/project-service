@@ -1,4 +1,4 @@
-package de.thm.mni.microservices.gruppe6.template
+package de.thm.mni.microservices.gruppe6.project
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
