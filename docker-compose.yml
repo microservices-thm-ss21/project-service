@@ -3,6 +3,8 @@ version: '3'
 services:
   postgres:
     image: postgres
+    ports:
+      - 5432:5432
     environment:
       - POSTGRES_USER=dev
       - POSTGRES_PASSWORD=password
@@ -13,20 +15,20 @@ services:
     networks:
       - database
 
-  project-service:
-    image: project-service
-    build:
-      context: ./
-      dockerfile: Dockerfile
-    ports:
-    - 8080:8080
-    depends_on:
-      - postgres
-    volumes:
-      - /data/project-service
-    networks:
-      - database
-      - network
+#  project-service:
+#    image: project-service
+#    build:
+#      context: ./
+#      dockerfile: Dockerfile
+#    ports:
+#    - 8080:8080
+#    depends_on:
+#      - postgres
+#    volumes:
+#      - /data/project-service
+#    networks:
+#      - database
+#      - network
 
 networks:
   database:
