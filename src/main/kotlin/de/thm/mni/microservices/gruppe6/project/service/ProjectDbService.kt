@@ -1,5 +1,6 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
+import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.message.MemberDTO
 import de.thm.mni.microservices.gruppe6.project.model.message.ProjectDTO
 import de.thm.mni.microservices.gruppe6.project.model.persistence.Member
@@ -42,7 +43,7 @@ class ProjectDbService(@Autowired val projectRepo: ProjectRepository, @Autowired
      * @param id: project id
      */
     fun deleteProject(id: UUID): Mono<Void> {
-        return projectRepo.deleteById(id)
+        return projectRepo.deleteById(id).onErrorResume { Mono.error(ServiceException(it)) }
     }
 
     /**
@@ -53,12 +54,12 @@ class ProjectDbService(@Autowired val projectRepo: ProjectRepository, @Autowired
 
     /**
      * Stores all given members
-     * @param id: project id
+     * @param projectId: project id
      * @toDo: Return value not implemented
      */
-    fun createMembers(project_id: UUID, members: List<MemberDTO>?): Flux<Member> {
+    fun createMembers(projectId: UUID, members: List<MemberDTO>?): Flux<Member> {
         if (members != null) {
-            return Flux.fromIterable(members).flatMap { memberDTO -> memberRepo.save(Member(project_id, memberDTO)) }
+            return Flux.fromIterable(members).flatMap { memberDTO -> memberRepo.save(Member(projectId, memberDTO)) }
         }
         return Flux.empty()
     }

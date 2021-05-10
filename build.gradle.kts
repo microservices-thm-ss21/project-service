@@ -18,6 +18,7 @@ configurations {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
@@ -28,7 +29,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
     implementation("org.springframework.boot:spring-boot-starter-data-rest")
-    implementation("de.thm.mni.microservices.gruppe6:service-lib")
+    implementation("de.thm.mni.microservices.gruppe6:service-lib:0.0.1-SNAPSHOT")
     //implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
