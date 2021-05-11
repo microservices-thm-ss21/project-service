@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  postgres:
+  project-db:
     image: postgres
     ports:
       - 5432:5432
@@ -13,7 +13,7 @@ services:
       # copy the sql script to create tables
       - ./sql/create_tables.sql:/docker-entrypoint-initdb.d/create_tables.sql
     networks:
-      - database
+      - project-database
 
   project-service:
     image: project-service
@@ -22,16 +22,14 @@ services:
       dockerfile: Dockerfile
     ports:
     - 8082:8082
-    depends_on:
-      - postgres
     volumes:
       - /data/project-service
     networks:
-      - database
+      - project-database
       - network
 
 networks:
-  database:
+  project-database:
     driver: bridge
   network:
     driver: bridge
