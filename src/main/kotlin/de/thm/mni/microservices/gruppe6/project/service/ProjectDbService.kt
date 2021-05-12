@@ -1,10 +1,6 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
-import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
-import de.thm.mni.microservices.gruppe6.project.model.message.MemberDTO
 import de.thm.mni.microservices.gruppe6.project.model.message.ProjectDTO
-import de.thm.mni.microservices.gruppe6.project.model.persistence.Member
-import de.thm.mni.microservices.gruppe6.project.model.persistence.MemberRepository
 import de.thm.mni.microservices.gruppe6.project.model.persistence.Project
 import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
 import org.springframework.beans.factory.annotation.Autowired
@@ -14,7 +10,7 @@ import reactor.core.publisher.Mono
 import java.util.*
 
 @Component
-class ProjectDbService(@Autowired val projectRepo: ProjectRepository, @Autowired val memberRepo: MemberRepository) {
+class ProjectDbService(@Autowired private val projectRepo: ProjectRepository, @Autowired private val memberDbService: MemberDbService) {
 
     /**
      * returns all stores projects
@@ -22,11 +18,17 @@ class ProjectDbService(@Autowired val projectRepo: ProjectRepository, @Autowired
     fun getAllProjects(): Flux<Project> = projectRepo.findAll()
 
     /**
+     * returns stored project
+     */
+    fun getProjectById(id: UUID): Mono<Project> = projectRepo.findById(id)
+
+    /**
      * creates new project and stores all given members
      */
     fun createProjectWithMembers(projectDTO: ProjectDTO): Mono<Project> {
-        val project = projectRepo.save(Project(projectDTO))
-        return project.doOnNext { createMembers(it.id!!, projectDTO.members) }
+        val tst = Project(projectDTO)
+        val project = projectRepo.save(tst)
+        return project.doOnNext { memberDbService.createMembers(it.id!!, projectDTO.members) }
     }
 
     /**
@@ -43,49 +45,7 @@ class ProjectDbService(@Autowired val projectRepo: ProjectRepository, @Autowired
      * @param id: project id
      */
     fun deleteProject(id: UUID): Mono<Void> {
-        return projectRepo.deleteById(id).onErrorResume { Mono.error(ServiceException(it)) }
-    }
-
-    /**
-     * Gets all Members of a given Project id
-     * @param id: project id
-     */
-    fun getMembers(id: UUID): Flux<Member> = memberRepo.getMembersByProjectID(id)
-
-    /**
-     * Stores all given members
-     * @param projectId: project id
-     * @toDo: Return value not implemented
-     */
-    fun createMembers(projectId: UUID, members: List<MemberDTO>?): Flux<Member> {
-        if (members != null) {
-            return Flux.fromIterable(members).flatMap { memberDTO -> memberRepo.save(Member(projectId, memberDTO)) }
-        }
-        return Flux.empty()
-    }
-
-    /**
-     * Delete all members of a project given its id
-     * @param id: project id
-     */
-    fun deleteAllMembers(id: UUID): Mono<Void> {
-        return memberRepo.deleteAllMembersByProjectID(id)
-    }
-
-    /**
-     * Delete given members of a project given its id
-     * @param id: project id
-     */
-    fun deleteMembers(id: UUID, members: List<Member>): Mono<Void> {
-        return memberRepo.deleteMembersByProjectID(id, members.map { m -> m.userId })
-    }
-
-    /**
-     * Update the roles of members within a given project
-     * @param id: project id
-     */
-    fun updateMemberRoles(id: UUID, members: List<MemberDTO>): Flux<Member> {
-        return Flux.fromIterable(members).flatMap { memberRepo.findMemberOfProject(id, it.userId!!) }.zipWithIterable(members).flatMap { memberRepo.save(Member(it.t1.id, it.t1.projectId, it.t1.userId, it.t2.projectRole!!)) }
+        return projectRepo.deleteById(id)
     }
 
     fun Project.applyProjectDTO(projectDTO: ProjectDTO): Project {
