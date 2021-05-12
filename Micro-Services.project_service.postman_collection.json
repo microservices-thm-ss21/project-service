@@ -14,15 +14,35 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8080/api/projects/",
+							"raw": "localhost:8082/api/projects/",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "8082",
 							"path": [
 								"api",
 								"projects",
 								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get one project",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8082/api/projects/e42e93d1-56dc-4687-9039-beb25dc1732a",
+							"host": [
+								"localhost"
+							],
+							"port": "8082",
+							"path": [
+								"api",
+								"projects",
+								"e42e93d1-56dc-4687-9039-beb25dc1732a"
 							]
 						}
 					},
@@ -35,7 +55,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"Testprojekt\",\r\n    \"creatorId\": \"e42e93d1-56dc-4687-9039-beb25dc1732a\",\r\n    \"members\": [\r\n        {\r\n            \"userId\": \"e42e93d1-56dc-4687-9039-beb25dc1732a\",\r\n            \"projectRole\": \"admin\"\r\n        }\r\n    ]\r\n}",
+							"raw": "{\r\n    \"name\": \"Testprojekt\",\r\n    \"creatorId\": \"8d8fa2d7-b999-4e07-9739-c563ee9fb12b\",\r\n    \"members\": [\r\n        {\r\n            \"userId\": \"8d8fa2d7-b999-4e07-9739-c563ee9fb12b\",\r\n            \"projectRole\": \"admin\"\r\n        }\r\n    ]\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -43,11 +63,11 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8080/api/projects/",
+							"raw": "localhost:8082/api/projects/",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "8082",
 							"path": [
 								"api",
 								"projects",
@@ -72,11 +92,11 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8080/api/projects/e86c57cb-d703-4f39-9632-3782cb5500e8",
+							"raw": "localhost:8082/api/projects/e86c57cb-d703-4f39-9632-3782cb5500e8",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "8082",
 							"path": [
 								"api",
 								"projects",
@@ -92,11 +112,11 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "localhost:8080/api/projects/e86c57cb-d703-4f39-9632-3782cb5500e8",
+							"raw": "localhost:8082/api/projects/e86c57cb-d703-4f39-9632-3782cb5500e8",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "8082",
 							"path": [
 								"api",
 								"projects",
@@ -112,11 +132,11 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8080/api/projects/e42e93d1-56dc-4687-9039-beb25dc1732a/members",
+							"raw": "localhost:8082/api/projects/e42e93d1-56dc-4687-9039-beb25dc1732a/members",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "8082",
 							"path": [
 								"api",
 								"projects",
@@ -134,7 +154,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "[\r\n    {\r\n        \"userId\": \"e86c57cb-d703-4f39-9632-3782cb5500e8\",\r\n        \"projectRole\": \"admin\"\r\n    },\r\n    {\r\n        \"userId\": \"11111111-2222-3333-4444-555555555555\",\r\n        \"projectRole\": \"admin\"\r\n    }\r\n]",
+							"raw": "[\r\n    {\r\n        \"userId\": \"8d8fa2d7-b999-4e07-9739-c563ee9fb12b\",\r\n        \"projectRole\": \"admin\"\r\n    }\r\n]",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -142,11 +162,11 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8080/api/projects/e42e93d1-56dc-4687-9039-beb25dc1732a/members",
+							"raw": "localhost:8082/api/projects/e42e93d1-56dc-4687-9039-beb25dc1732a/members",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "8082",
 							"path": [
 								"api",
 								"projects",
@@ -164,7 +184,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "[\r\n    {\r\n        \"userId\": \"e86c57cb-d703-4f39-9632-3782cb5500e8\",\r\n        \"projectRole\": \"normal\"\r\n    },\r\n    {\r\n        \"userId\": \"11111111-2222-3333-4444-555555555555\",\r\n        \"projectRole\": \"normal\"\r\n    }\r\n]",
+							"raw": "[\r\n    {\r\n        \"userId\": \"18525d18-76d9-4057-ace0-7a69c8cc0907\",\r\n        \"projectRole\": \"normal\"\r\n    }\r\n]",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -172,11 +192,11 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8080/api/projects/e42e93d1-56dc-4687-9039-beb25dc1732a/members",
+							"raw": "localhost:8082/api/projects/e42e93d1-56dc-4687-9039-beb25dc1732a/members",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "8082",
 							"path": [
 								"api",
 								"projects",
@@ -188,16 +208,16 @@
 					"response": []
 				},
 				{
-					"name": "Delete members of a project",
+					"name": "Delete all members of a project",
 					"request": {
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "localhost:8080/api/projects/e42e93d1-56dc-4687-9039-beb25dc1732a/members",
+							"raw": "localhost:8082/api/projects/e42e93d1-56dc-4687-9039-beb25dc1732a/members",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "8082",
 							"path": [
 								"api",
 								"projects",
