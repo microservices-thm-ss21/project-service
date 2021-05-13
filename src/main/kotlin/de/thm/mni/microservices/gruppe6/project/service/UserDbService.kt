@@ -1,8 +1,5 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
-import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
-import de.thm.mni.microservices.gruppe6.project.model.message.ProjectDTO
-import de.thm.mni.microservices.gruppe6.project.model.persistence.Project
 import de.thm.mni.microservices.gruppe6.project.model.persistence.User
 import de.thm.mni.microservices.gruppe6.project.model.persistence.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
@@ -37,6 +34,6 @@ class UserDbService(@Autowired private val userRepo: UserRepository) {
      * @param id: user id
      */
     fun deleteUser(id: UUID): Mono<Void> {
-        return userRepo.deleteById(id).onErrorResume { Mono.error(ServiceException(it)) }
+        return userRepo.deleteById(id)
     }
 }

@@ -1,5 +1,6 @@
 package de.thm.mni.microservices.gruppe6.project.controller
 
+import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.message.MemberDTO
 import de.thm.mni.microservices.gruppe6.project.model.message.ProjectDTO
 import de.thm.mni.microservices.gruppe6.project.model.persistence.Member
@@ -7,6 +8,7 @@ import de.thm.mni.microservices.gruppe6.project.model.persistence.Project
 import de.thm.mni.microservices.gruppe6.project.service.MemberDbService
 import de.thm.mni.microservices.gruppe6.project.service.ProjectDbService
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -20,7 +22,7 @@ class MemberController(@Autowired val memberService: MemberDbService) {
      * Creates new members for a project with given id
      */
     @PostMapping("")
-    fun createMembers(@PathVariable id: UUID, @RequestBody members: List<MemberDTO>): Flux<Member> = memberService.createMembers(id, members)
+    fun createMembers(@PathVariable id: UUID, @RequestBody members: List<MemberDTO>): Flux<Member> = memberService.createMembers(id, members).onErrorResume { Mono.error(ServiceException(HttpStatus.CONFLICT, "Project or Member(s) does not exist", it)) }
 
     /**
      * Get all members of a given project
@@ -41,5 +43,5 @@ class MemberController(@Autowired val memberService: MemberDbService) {
      * @param id: project id
      */
     @PutMapping("")
-    fun updateMembers(@PathVariable id: UUID, @RequestBody members: List<MemberDTO>): Flux<Member> = memberService.updateMemberRoles(id, members)
+    fun updateMembers(@PathVariable id: UUID, @RequestBody members: List<MemberDTO>): Flux<Member> = memberService.updateMemberRoles(id, members).onErrorResume { Mono.error(ServiceException(HttpStatus.CONFLICT, "Project or Member(s) does not exist", it)) }
 }

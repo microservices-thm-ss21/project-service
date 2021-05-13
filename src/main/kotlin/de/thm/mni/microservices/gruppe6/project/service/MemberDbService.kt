@@ -18,9 +18,6 @@ class MemberDbService(@Autowired private val memberRepo: MemberRepository) {
      */
     fun getMembers(id: UUID): Flux<Member> = memberRepo.getMembersByProjectID(id)
 
-    // TODO: implement only if composite key works
-//    fun isMemberInProject(projectId: UUID, memberId: UUID): Mono<Boolean> = memberRepo.
-
     /**
      * Stores all given members
      * @param projectId: project id
