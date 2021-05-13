@@ -1,0 +1,345 @@
+openapi: 3.0.3
+info:
+  title: API Specification for Project-Service
+  description: API Specification for Project-Service
+  version: 1.0.0
+servers:
+  - url: 'http://localhost:8082/api/projects'
+tags:
+  - name: Projects
+    description: Projects saved within the project service
+  - name: Members
+    description: Members of Projects saved within the project service
+paths:
+  /:
+    get:
+      description: |
+        Returns all Projects saved within the project service
+      tags:
+        - Projects
+      responses:
+        '200':
+          description: List of Projects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProjects'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                type: string
+
+    post:
+      description: Creates a new Project
+      tags:
+        - Projects
+      requestBody:
+        description: projectDTO
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectDTO'
+      responses:
+        '200':
+          description: Created Project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '409':
+          description: Project creator does not exist
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /{id}:
+    get:
+      description: Get project of the given id
+      tags:
+        - Projects
+      parameters:
+        - name: id
+          in: path
+          description: ID of project
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
+      responses:
+        '200':
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        default:
+          description: unexpected error
+          content:
+           application/json:
+              schema:
+                type: string
+
+    put:
+      description: Update project of the given id
+      tags:
+        - Projects
+      parameters:
+        - name: id
+          in: path
+          description: ID of project
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
+      requestBody:
+        description: ProjectDTO
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectDTO'
+      responses:
+        '200':
+          description: Updated Project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '409':
+          description: Either Project creator or Member(s) does not exist
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                type: string
+
+    delete:
+      description: Delete project of the given id
+      tags:
+        - Projects
+      parameters:
+        - name: id
+          in: path
+          description: ID of project
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
+      responses:
+        '200':
+          description: Successfully deleted project
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /{id}/members:
+    get:
+      description: Get all members of a project with the given id
+      tags:
+        - Members
+      parameters:
+        - name: id
+          in: path
+          description: ID of project
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
+      responses:
+        '200':
+          description: Members of Project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfMembers'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                type: string
+
+    post:
+      description: Creates new members for a project with the given id
+      tags:
+        - Members
+      parameters:
+        - name: id
+          in: path
+          description: ID of project
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
+      requestBody:
+        description: List of MemberDTOs
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArrayOfMemberDTOs'
+      responses:
+        '200':
+          description: Created Members for Project with given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfMembers'
+        '409':
+          description: Project or Member(s) does not exist
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                type: string
+
+    put:
+      description: Update members of a project with the given id
+      tags:
+        - Members
+      parameters:
+        - name: id
+          in: path
+          description: ID of project
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
+      requestBody:
+        description: List of MemberDTOs
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArrayOfMemberDTOs'
+      responses:
+        '200':
+          description: Updated Members of Project with given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfMembers'
+        '409':
+          description: Project or Member(s) does not exist
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                type: string
+
+    delete:
+      description: Delete all members of a project with the given id
+      tags:
+        - Members
+      parameters:
+        - name: id
+          in: path
+          description: ID of project
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
+      responses:
+        '200':
+          description: Successfully deleted members
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                type: string
+
+components:
+  schemas:
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        creatorId:
+          type: string
+          format: uuid
+        createTime:
+          type: string
+          format: date-time
+
+    ArrayOfProjects:
+      type: array
+      items:
+        $ref: '#/components/schemas/Project'
+
+    ProjectDTO:
+      type: object
+      required:
+        - name
+        - creatorId
+        - members
+      properties:
+        name:
+          type: string
+        creatorId:
+          type: string
+          format: uuid
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemberDTO'
+
+    Member:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        projectRole:
+          type: string
+
+    ArrayOfMembers:
+      type: array
+      items:
+        $ref: '#/components/schemas/Member'
+
+    MemberDTO:
+      type: object
+      required:
+        - userId
+        - projectRole
+      properties:
+        userId:
+          type: string
+          format: uuid
+        projectRole:
+          type: string
+
+    ArrayOfMemberDTOs:
+      type: array
+      items:
+        $ref: '#/components/schemas/MemberDTO'
