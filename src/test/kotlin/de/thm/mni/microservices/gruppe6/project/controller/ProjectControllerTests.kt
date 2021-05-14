@@ -30,7 +30,7 @@ class ProjectControllerTests {
     @Autowired private lateinit var webTestClient: WebTestClient
     @MockBean private lateinit var projectService: ProjectDbService
 
-    private val PROJECTS_URI = "/api/projects";
+    private val PROJECTS_URI = "/api/projects"
 
     fun createTestProject(name: String): Project {
         return Project(UUID.randomUUID(), name, UUID.randomUUID(), LocalDateTime.now())
