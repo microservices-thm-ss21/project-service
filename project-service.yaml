@@ -43,7 +43,7 @@ paths:
             schema:
               $ref: '#/components/schemas/ProjectDTO'
       responses:
-        '200':
+        '201':
           description: Created Project
           content:
             application/json:
@@ -79,6 +79,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Project'
+        '404':
+          description: project not found
         default:
           description: unexpected error
           content:
@@ -136,7 +138,7 @@ paths:
             format: uuid
             example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
       responses:
-        '200':
+        '204':
           description: Successfully deleted project
         default:
           description: unexpected error
@@ -194,7 +196,7 @@ paths:
             schema:
               $ref: '#/components/schemas/ArrayOfMemberDTOs'
       responses:
-        '200':
+        '201':
           description: Created Members for Project with given ID
           content:
             application/json:
@@ -259,7 +261,7 @@ paths:
             format: uuid
             example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
       responses:
-        '200':
+        '204':
           description: Successfully deleted members
         default:
           description: unexpected error

@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.switchIfEmpty
 import java.util.*
 
 @RestController
@@ -26,13 +27,17 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
      * @param id: project id
      */
     @GetMapping("{id}")
-    fun getProject(@PathVariable id: UUID): Mono<Project> = projectService.getProjectById(id)
+    fun getProject(@PathVariable id: UUID): Mono<Project> = projectService.getProjectById(id).switchIfEmpty { Mono.error(ServiceException(HttpStatus.NOT_FOUND)) }
 
     /**
      * Creates a new project with members
      */
     @PostMapping("")
-    fun createProject(@RequestBody projectDTO: ProjectDTO): Mono<Project> = projectService.createProjectWithMembers(projectDTO).onErrorResume { Mono.error(ServiceException(HttpStatus.CONFLICT, "Project creator does not exist", it)) }
+    @ResponseStatus(value = HttpStatus.CREATED)
+    fun createProject(@RequestBody projectDTO: ProjectDTO): Mono<Project> {
+        val project = projectService.createProjectWithMembers(projectDTO)
+        return project.onErrorResume { Mono.error(ServiceException(HttpStatus.CONFLICT, it)) }
+    }
 
     /**
      * Updates project details with given id
@@ -46,6 +51,7 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
      * @param id: project id
      */
     @DeleteMapping("{id}")
+    @ResponseStatus(value = HttpStatus.NO_CONTENT)
     fun deleteProject(@PathVariable id: UUID): Mono<Void> = projectService.deleteProject(id)
 
 }

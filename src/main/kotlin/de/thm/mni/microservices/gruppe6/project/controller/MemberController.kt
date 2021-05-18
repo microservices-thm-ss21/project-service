@@ -2,11 +2,8 @@ package de.thm.mni.microservices.gruppe6.project.controller
 
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.message.MemberDTO
-import de.thm.mni.microservices.gruppe6.project.model.message.ProjectDTO
 import de.thm.mni.microservices.gruppe6.project.model.persistence.Member
-import de.thm.mni.microservices.gruppe6.project.model.persistence.Project
 import de.thm.mni.microservices.gruppe6.project.service.MemberDbService
-import de.thm.mni.microservices.gruppe6.project.service.ProjectDbService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
@@ -22,6 +19,7 @@ class MemberController(@Autowired val memberService: MemberDbService) {
      * Creates new members for a project with given id
      */
     @PostMapping("")
+    @ResponseStatus(value = HttpStatus.CREATED)
     fun createMembers(@PathVariable id: UUID, @RequestBody members: List<MemberDTO>): Flux<Member> = memberService.createMembers(id, members).onErrorResume { Mono.error(ServiceException(HttpStatus.CONFLICT, "Project or Member(s) does not exist", it)) }
 
     /**
@@ -36,6 +34,7 @@ class MemberController(@Autowired val memberService: MemberDbService) {
      * @param id: project id
      */
     @DeleteMapping("")
+    @ResponseStatus(value = HttpStatus.NO_CONTENT)
     fun deleteMembers(@PathVariable id: UUID): Mono<Void> = memberService.deleteAllMembers(id)
 
     /**
