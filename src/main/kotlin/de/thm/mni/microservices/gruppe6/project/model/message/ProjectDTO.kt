@@ -5,8 +5,8 @@ import java.util.*
 /**
  * DTO = Data Transport Object
  */
-class ProjectDTO {
-    var name: String? = null
-    var creatorId: UUID? = null
+data class ProjectDTO (
+    var name: String? = null,
+    var creatorId: UUID? = null,
     var members: List<MemberDTO>? = null
-}
+)
