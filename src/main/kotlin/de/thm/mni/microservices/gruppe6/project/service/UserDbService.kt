@@ -1,5 +1,8 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
+
+import de.thm.mni.microservices.gruppe6.lib.event.DataEventCode.*
+import de.thm.mni.microservices.gruppe6.lib.event.UserDataEvent
 import de.thm.mni.microservices.gruppe6.project.model.persistence.User
 import de.thm.mni.microservices.gruppe6.project.model.persistence.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
@@ -35,5 +38,15 @@ class UserDbService(@Autowired private val userRepo: UserRepository) {
      */
     fun deleteUser(id: UUID): Mono<Void> {
         return userRepo.deleteById(id)
+    }
+
+    fun receiveUpdate(userDataEvent: UserDataEvent) {
+        when (userDataEvent.code) {
+            CREATED -> userRepo.save(User(userDataEvent.id))
+            DELETED -> userRepo.deleteById(userDataEvent.id)
+            UPDATED -> {
+            }
+            else -> throw IllegalArgumentException("Unexpected code for userEvent: ${userDataEvent.code}")
+        }
     }
 }

@@ -1,5 +1,6 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
+import de.thm.mni.microservices.gruppe6.lib.event.ProjectDataEvent
 import de.thm.mni.microservices.gruppe6.project.model.message.MemberDTO
 import de.thm.mni.microservices.gruppe6.project.model.persistence.Member
 import de.thm.mni.microservices.gruppe6.project.model.persistence.MemberRepository
@@ -50,6 +51,8 @@ class MemberDbService(@Autowired private val memberRepo: MemberRepository) {
      * @param id: project id
      */
     fun updateMemberRoles(id: UUID, members: List<MemberDTO>): Flux<Member> {
-        return Flux.fromIterable(members).flatMap { memberRepo.findMemberOfProject(id, it.userId!!) }.zipWithIterable(members).flatMap { memberRepo.save(Member(it.t1.id, it.t1.projectId, it.t1.userId, it.t2.projectRole!!)) }
+        return Flux.fromIterable(members).flatMap { memberRepo.findMemberOfProject(id, it.userId!!) }
+            .zipWithIterable(members)
+            .flatMap { memberRepo.save(Member(it.t1.id, it.t1.projectId, it.t1.userId, it.t2.projectRole!!)) }
     }
 }

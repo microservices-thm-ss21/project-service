@@ -10,6 +10,7 @@ import org.mockito.BDDMockito.*
 import org.mockito.Mock;
 import org.mockito.Mockito
 import org.mockito.junit.jupiter.MockitoExtension
+import org.springframework.jms.core.JmsTemplate
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.LocalDateTime
@@ -18,10 +19,11 @@ import java.util.*
 @ExtendWith(MockitoExtension::class)
 class ProjectDbServiceTests(
         @Mock private val projectRepository: ProjectRepository,
-        @Mock private val memberService: MemberDbService
+        @Mock private val memberService: MemberDbService,
+        @Mock private val sender: JmsTemplate
 ) {
 
-    private val projectService = ProjectDbService(projectRepository, memberService)
+    private val projectService = ProjectDbService(projectRepository, memberService, sender)
 
     fun createTestProject(name: String): Project {
         return Project(UUID.randomUUID(), name, UUID.randomUUID(), LocalDateTime.now())
