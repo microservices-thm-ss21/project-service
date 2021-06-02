@@ -11,16 +11,18 @@ import org.mockito.BDDMockito.*
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.junit.jupiter.MockitoExtension
+import org.springframework.jms.core.JmsTemplate
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.*
 
 @ExtendWith(MockitoExtension::class)
 class MemberDbServiceTests(
-        @Mock private val memberRepository: MemberRepository
+        @Mock private val memberRepository: MemberRepository,
+        @Mock private val sender: JmsTemplate
 ) {
 
-    private val memberService = MemberDbService(memberRepository)
+    private val memberService = MemberDbService(memberRepository, sender)
 
     fun createTestMember(projectId: UUID, projectRole: String): Member {
         return Member(UUID.randomUUID(), projectId, UUID.randomUUID(), projectRole)

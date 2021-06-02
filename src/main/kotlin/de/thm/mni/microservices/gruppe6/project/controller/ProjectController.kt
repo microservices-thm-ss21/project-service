@@ -13,6 +13,7 @@ import reactor.kotlin.core.publisher.switchIfEmpty
 import java.util.*
 
 @RestController
+@CrossOrigin
 @RequestMapping("/api/projects")
 class ProjectController(@Autowired val projectService: ProjectDbService) {
 

@@ -12,6 +12,7 @@ import reactor.core.publisher.Mono
 import java.util.*
 
 @RestController
+@CrossOrigin
 @RequestMapping("/api/projects/{id}/members")
 class MemberController(@Autowired val memberService: MemberDbService) {
 
@@ -20,7 +21,16 @@ class MemberController(@Autowired val memberService: MemberDbService) {
      */
     @PostMapping("")
     @ResponseStatus(value = HttpStatus.CREATED)
-    fun createMembers(@PathVariable id: UUID, @RequestBody members: List<MemberDTO>): Flux<Member> = memberService.createMembers(id, members).onErrorResume { Mono.error(ServiceException(HttpStatus.CONFLICT, "Project or Member(s) does not exist", it)) }
+    fun createMembers(@PathVariable id: UUID, @RequestBody members: List<MemberDTO>): Flux<Member> =
+        memberService.createMembers(id, members).onErrorResume {
+            Mono.error(
+                ServiceException(
+                    HttpStatus.CONFLICT,
+                    "Project or Member(s) does not exist",
+                    it
+                )
+            )
+        }
 
     /**
      * Get all members of a given project
@@ -42,5 +52,14 @@ class MemberController(@Autowired val memberService: MemberDbService) {
      * @param id: project id
      */
     @PutMapping("")
-    fun updateMembers(@PathVariable id: UUID, @RequestBody members: List<MemberDTO>): Flux<Member> = memberService.updateMemberRoles(id, members).onErrorResume { Mono.error(ServiceException(HttpStatus.CONFLICT, "Project or Member(s) does not exist", it)) }
+    fun updateMembers(@PathVariable id: UUID, @RequestBody members: List<MemberDTO>): Flux<Member> =
+        memberService.updateMemberRoles(id, members).onErrorResume {
+            Mono.error(
+                ServiceException(
+                    HttpStatus.CONFLICT,
+                    "Project or Member(s) does not exist",
+                    it
+                )
+            )
+        }
 }

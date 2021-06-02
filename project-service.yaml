@@ -338,8 +338,10 @@ components:
         userId:
           type: string
           format: uuid
+          example: "8d8fa2d7-b999-4e07-9739-c563ee9fb12b"
         projectRole:
           type: string
+          example: "boss"
 
     ArrayOfMemberDTOs:
       type: array
