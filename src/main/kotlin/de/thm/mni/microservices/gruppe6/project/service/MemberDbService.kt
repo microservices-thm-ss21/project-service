@@ -3,6 +3,7 @@ package de.thm.mni.microservices.gruppe6.project.service
 import de.thm.mni.microservices.gruppe6.lib.event.DomainEventChangedStringUUID
 import de.thm.mni.microservices.gruppe6.lib.event.DomainEventChangedUUID
 import de.thm.mni.microservices.gruppe6.lib.event.DomainEventCode
+import de.thm.mni.microservices.gruppe6.lib.event.EventTopic
 import de.thm.mni.microservices.gruppe6.project.model.message.MemberDTO
 import de.thm.mni.microservices.gruppe6.project.model.persistence.Member
 import de.thm.mni.microservices.gruppe6.project.model.persistence.MemberRepository
@@ -36,6 +37,7 @@ class MemberDbService(
                 .flatMap { memberDTO -> memberRepo.save(Member(projectId, memberDTO)) }
                 .publishOn(Schedulers.boundedElastic()).map {
                     sender.convertAndSend(
+                        EventTopic.DomainEvents_ProjectService.topic,
                         DomainEventChangedStringUUID(
                             DomainEventCode.PROJECT_CHANGED_MEMBER,
                             projectId,
@@ -59,6 +61,7 @@ class MemberDbService(
         return memberRepo.deleteAllMembersByProjectID(projectId)
             .publishOn(Schedulers.boundedElastic()).map {
                 sender.convertAndSend(
+                    EventTopic.DomainEvents_ProjectService.topic,
                     DomainEventChangedUUID(
                         DomainEventCode.PROJECT_CHANGED_ALL_MEMBERS,
                         projectId,
@@ -77,6 +80,7 @@ class MemberDbService(
     fun deleteMembers(projectId: UUID, members: List<Member>): Mono<Void> {
         return Flux.fromIterable(members).publishOn(Schedulers.boundedElastic()).map {
             sender.convertAndSend(
+                EventTopic.DomainEvents_ProjectService.topic,
                 DomainEventChangedUUID(
                     DomainEventCode.PROJECT_CHANGED_MEMBER,
                     projectId,
@@ -98,6 +102,7 @@ class MemberDbService(
             .flatMap { memberRepo.save(Member(it.t1.id, it.t1.projectId, it.t1.userId, it.t2.projectRole!!)) }
             .publishOn(Schedulers.boundedElastic()).map {
                 sender.convertAndSend(
+                    EventTopic.DomainEvents_ProjectService.topic,
                     DomainEventChangedStringUUID(
                         DomainEventCode.PROJECT_CHANGED_MEMBER,
                         projectId,

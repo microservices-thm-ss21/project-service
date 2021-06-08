@@ -35,7 +35,9 @@ class ProjectDbService(
     fun createProjectWithMembers(projectDTO: ProjectDTO): Mono<Project> {
         val project = projectRepo.save(Project(projectDTO))
             .publishOn(Schedulers.boundedElastic()).map {
-                sender.convertAndSend(ProjectDataEvent(DataEventCode.CREATED, it.id!!))
+                sender.convertAndSend(
+                    EventTopic.DataEvents.topic,
+                    ProjectDataEvent(DataEventCode.CREATED, it.id!!))
                 it
             }
         return project.doOnNext { memberDbService.createMembers(it.id!!, projectDTO.members) }
@@ -51,8 +53,10 @@ class ProjectDbService(
             .map { projectRepo.save(it.first)
             it}
             .publishOn(Schedulers.boundedElastic()).map {
-                sender.convertAndSend(ProjectDataEvent(DataEventCode.UPDATED, projectId))
-                it.second.forEach(sender::convertAndSend)
+                sender.convertAndSend(
+                    EventTopic.DataEvents.topic,
+                    ProjectDataEvent(DataEventCode.UPDATED, projectId))
+                it.second.forEach{(topic, event) -> sender.convertAndSend(topic, event)}
                 it.first
             }
     }
@@ -64,21 +68,25 @@ class ProjectDbService(
     fun deleteProject(projectId: UUID): Mono<Void> {
         return projectRepo.deleteById(projectId)
             .publishOn(Schedulers.boundedElastic()).map {
-                sender.convertAndSend(ProjectDataEvent(DataEventCode.DELETED, projectId))
+                sender.convertAndSend(
+                    EventTopic.DataEvents.topic,
+                    ProjectDataEvent(DataEventCode.DELETED, projectId))
                 it
             }
     }
 
-    fun Project.applyProjectDTO(projectDTO: ProjectDTO): Pair<Project, List<DomainEvent>> {
-        val eventList = ArrayList<DomainEvent>()
+    fun Project.applyProjectDTO(projectDTO: ProjectDTO): Pair<Project, List<Pair<String, DomainEvent>>> {
+        val eventList = ArrayList<Pair<String, DomainEvent>>()
 
         if (this.name != projectDTO.name) {
             eventList.add(
-                DomainEventChangedString(
-                    DomainEventCode.PROJECT_CHANGED_NAME,
-                    this.id!!,
-                    this.name,
-                    projectDTO.name
+                Pair(EventTopic.DomainEvents_ProjectService.topic,
+                    DomainEventChangedString(
+                        DomainEventCode.PROJECT_CHANGED_NAME,
+                        this.id!!,
+                        this.name,
+                        projectDTO.name
+                    )
                 )
             )
             this.name = projectDTO.name!!
