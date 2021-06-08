@@ -1,6 +1,7 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
 import de.thm.mni.microservices.gruppe6.lib.event.DataEvent
+import de.thm.mni.microservices.gruppe6.lib.event.IssueDataEvent
 import de.thm.mni.microservices.gruppe6.lib.event.ProjectDataEvent
 import de.thm.mni.microservices.gruppe6.lib.event.UserDataEvent
 import org.springframework.beans.factory.annotation.Autowired
@@ -20,8 +21,8 @@ class DataEventService(
         dataEvent.subscribe {
             when (it) {
                 is UserDataEvent -> userDbService::receiveUpdate
-                is ProjectDataEvent -> {/* Do nothing with own events */
-                }
+                is ProjectDataEvent -> {/* Do nothing with own events */}
+                is IssueDataEvent -> {/* ignore */}
                 else -> error("Unexpected Event type: ${it?.javaClass}")
             }
         }
