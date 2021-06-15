@@ -35,6 +35,15 @@ class MemberDbService(
                 .publishOn(Schedulers.boundedElastic()).map {
                     sender.convertAndSend(
                         EventTopic.DomainEvents_ProjectService.topic,
+                        DomainEventChangedUUID(
+                            DomainEventCode.PROJECT_CHANGED_MEMBER,
+                            projectId,
+                            null,
+                            it.id
+                        )
+                    )
+                    sender.convertAndSend(
+                        EventTopic.DomainEvents_ProjectService.topic,
                         DomainEventChangedStringUUID(
                             DomainEventCode.PROJECT_CHANGED_MEMBER,
                             projectId,
