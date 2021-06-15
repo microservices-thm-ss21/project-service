@@ -40,7 +40,11 @@ class ProjectDbService(
                     ProjectDataEvent(DataEventCode.CREATED, it.id!!))
                 it
             }
-        return project.doOnNext { memberDbService.createMembers(it.id!!, projectDTO.members) }
+
+        return project.map {
+            memberDbService.createMembers(it.id!!, projectDTO.members).subscribe()
+            it
+        }
     }
 
     /**
