@@ -75,6 +75,11 @@ class ProjectDbService(
             }
     }
 
+    /**
+     * apply the projectDTO to the Project model as stored in DB and generate Domain Events
+     * @param projectDTO request body to apply to a project
+     * @return the updated project and a list of events to be issued: (Topic, new DomainEvent)
+     */
     fun Project.applyProjectDTO(projectDTO: ProjectDTO): Pair<Project, List<Pair<String, DomainEvent>>> {
         val eventList = ArrayList<Pair<String, DomainEvent>>()
 

@@ -14,11 +14,24 @@ import reactor.core.publisher.Mono
 import javax.jms.Message
 import javax.jms.ObjectMessage
 
+/**
+ * Class used to receive any Events regarding the microservices workspace
+ * @param dataEventService A service to transfer the events into the project specific context
+ */
 @Component
 class Receiver(private val dataEventService: DataEventService) {
 
+    /**
+     * Logger to track errors within receiving message and debugging not implemented message types
+     */
     val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
+
+    /**
+     * Listen to all topics specified via the JMSListener destinations, distributes the messages to the corresponding services
+     * The ContainerFactory is required to specify the receiving context.
+     * @param message a Object message, containing either a DataEvent or DomainEvent within its `object`-payload.
+     */
     @JmsListeners(
         JmsListener(destination = EventTopic.DataEvents.topic, containerFactory = "jmsListenerContainerFactory"),
         //JmsListener(destination = EventTopic.DomainEvents_UserService.topic, containerFactory = "jmsListenerContainerFactory"),
