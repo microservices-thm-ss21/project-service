@@ -85,9 +85,7 @@ class ProjectDbServiceTests(
         val createdProject = project.copy(UUID.randomUUID())
 
         given(projectRepository.save(any())).willReturn(Mono.just(createdProject))
-        val mockID = UUID.randomUUID()
-        //given(memberService.createMembers(mockID, emptyList())).willReturn(empty)
-        //given(empty.subscribe()).willReturn(Disposable)
+        given(memberService.createMembers(createdProject.id!!, emptyList())).willReturn(Flux.empty())
 
         val returnedProject: Project? = projectService.createProjectWithMembers(projectDTO).block()
 
@@ -95,9 +93,8 @@ class ProjectDbServiceTests(
         assertThat(returnedProject).`as`("created project").isEqualTo(createdProject)
 
         verify(projectRepository, times(1)).save(any())
-        verify(memberService, times(0)).createMembers(mockID, emptyList())
+        verify(memberService, times(1)).createMembers(createdProject.id!!, emptyList())
     }
-    */
 
     @Test
     fun shouldUpdateProject() {
