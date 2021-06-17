@@ -73,7 +73,6 @@ class ProjectDbServiceTests(
         verify(projectRepository, times(1)).findById(project.id!!)
     }
 
-    /*
     @Test
     fun testShouldCreateProject() {
         val project = createTestProject("project to create")
@@ -145,6 +144,5 @@ class ProjectDbServiceTests(
 
         verify(projectRepository, times(1)).deleteById(id)
     }
-     */
 
 }
