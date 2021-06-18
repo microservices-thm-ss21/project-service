@@ -37,7 +37,7 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
     @ResponseStatus(value = HttpStatus.CREATED)
     fun createProject(@RequestBody projectDTO: ProjectDTO): Mono<Project> {
         val project = projectService.createProjectWithMembers(projectDTO)
-        return project.onErrorResume { Mono.error(ServiceException(HttpStatus.CONFLICT, it)) }
+        return project.onErrorResume { Mono.error(ServiceException(httpStatus = HttpStatus.CONFLICT, cause = it)) }
     }
 
     /**

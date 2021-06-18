@@ -1,9 +1,6 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
-import de.thm.mni.microservices.gruppe6.lib.event.DomainEventChangedStringUUID
-import de.thm.mni.microservices.gruppe6.lib.event.DomainEventChangedUUID
-import de.thm.mni.microservices.gruppe6.lib.event.DomainEventCode
-import de.thm.mni.microservices.gruppe6.lib.event.EventTopic
+import de.thm.mni.microservices.gruppe6.lib.event.*
 import de.thm.mni.microservices.gruppe6.project.model.message.MemberDTO
 import de.thm.mni.microservices.gruppe6.project.model.persistence.Member
 import de.thm.mni.microservices.gruppe6.project.model.persistence.MemberRepository
@@ -38,11 +35,19 @@ class MemberDbService(
                 .publishOn(Schedulers.boundedElastic()).map {
                     sender.convertAndSend(
                         EventTopic.DomainEvents_ProjectService.topic,
-                        DomainEventChangedStringUUID(
+                        DomainEventChangedUUID(
                             DomainEventCode.PROJECT_CHANGED_MEMBER,
                             projectId,
                             null,
-                            it.userId,
+                            it.id
+                        )
+                    )
+                    sender.convertAndSend(
+                        EventTopic.DomainEvents_ProjectService.topic,
+                        DomainEventChangedStringUUID(
+                            DomainEventCode.PROJECT_CHANGED_MEMBER,
+                            projectId,
+                            it.id,
                             null,
                             it.projectRole
                         )
@@ -106,7 +111,6 @@ class MemberDbService(
                     DomainEventChangedStringUUID(
                         DomainEventCode.PROJECT_CHANGED_MEMBER,
                         projectId,
-                        it.userId,
                         it.userId,
                         null, // Not sure how to get this information.
                         it.projectRole
