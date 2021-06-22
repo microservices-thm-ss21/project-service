@@ -25,6 +25,12 @@ class MemberDbService(
     fun getMembers(projectId: UUID): Flux<Member> = memberRepo.getMembersByProjectID(projectId)
 
     /**
+     * Gets all Project Ids in which the User Id is included as a Member
+     * @param userId: user id
+     */
+    fun getAllProjectIdsOfMember(userId: UUID): Flux<UUID> = memberRepo.findAll().filter { p -> p.userId == userId }.map { m -> m.projectId }
+
+    /**
      * Stores all given members
      * @param projectId: project id
      */

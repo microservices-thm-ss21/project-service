@@ -24,6 +24,12 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
     fun getAllProjects(): Flux<Project> = projectService.getAllProjects()
 
     /**
+     * Returns all stored projects in which the user is included as a member
+     */
+    @GetMapping("users/{userId}")
+    fun getAllProjectsOfUser(@PathVariable userId: UUID): Flux<Project> = projectService.getAllProjectsOfUser(userId)
+
+    /**
      * Returns project with given id
      * @param id: project id
      */
