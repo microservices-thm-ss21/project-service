@@ -27,7 +27,7 @@ class ProjectDbService(
     /**
      * returns all stores projects that include the user as a member
      */
-    fun getAllProjectsOfUser(userId: UUID): Flux<Project> = projectRepo.findAllById(memberDbService.getAllProjectIdsOfMember(userId))
+    fun getAllProjectsOfUser(userId: UUID): Flux<Project> = memberDbService.getAllProjectIdsOfMember(userId).flatMap { projectRepo.findById(it) }
 
     /**
      * returns stored project

@@ -19,4 +19,7 @@ interface MemberRepository : ReactiveCrudRepository<Member, UUID> {
 
     @Query("select * from members where project_id = :projectId and user_id = :userId")
     fun findMemberOfProject(projectId: UUID, userId: UUID): Mono<Member>
+
+    @Query("select * from members where user_id = :userId")
+    fun findAllByUserId(userId: UUID): Flux<Member>
 }
