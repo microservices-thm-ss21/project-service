@@ -17,10 +17,9 @@ class DataEventService(
 
     @Throws(IllegalStateException::class)
     fun processDataEvent(dataEvent: Mono<DataEvent>) {
-
         dataEvent.subscribe {
             when (it) {
-                is UserDataEvent -> userDbService::receiveUpdate
+                is UserDataEvent -> {userDbService.receiveUpdate(it)}
                 is ProjectDataEvent -> {/* Do nothing with own events */}
                 is IssueDataEvent -> {/* ignore */}
                 else -> error("Unexpected Event type: ${it?.javaClass}")

@@ -42,8 +42,8 @@ class UserDbService(@Autowired private val userRepo: UserRepository) {
 
     fun receiveUpdate(userDataEvent: UserDataEvent) {
         when (userDataEvent.code) {
-            CREATED -> userRepo.save(User(userDataEvent.id))
-            DELETED -> userRepo.deleteById(userDataEvent.id)
+            CREATED -> userRepo.saveUser(userDataEvent.id).subscribe()
+            DELETED -> userRepo.deleteById(userDataEvent.id).subscribe()
             UPDATED -> {
             }
             else -> throw IllegalArgumentException("Unexpected code for userEvent: ${userDataEvent.code}")
