@@ -25,6 +25,14 @@ class MemberDbService(
     fun getMembers(projectId: UUID): Flux<Member> = memberRepo.getMembersByProjectID(projectId)
 
     /**
+     * Returns true if user is member in project
+     * @param projectId
+     * @param userId
+     * @@return isMember
+     */
+    fun isMember(projectId: UUID, userId: UUID): Mono<Boolean> = memberRepo.existsByUserIdAndProjectId(userId, projectId)
+
+    /**
      * Gets all Project Ids in which the User Id is included as a Member
      * @param userId: user id
      */

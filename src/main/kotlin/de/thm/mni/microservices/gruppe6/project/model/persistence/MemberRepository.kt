@@ -22,4 +22,6 @@ interface MemberRepository : ReactiveCrudRepository<Member, UUID> {
 
     @Query("select * from members where user_id = :userId")
     fun findAllByUserId(userId: UUID): Flux<Member>
+
+    fun existsByUserIdAndProjectId(userId: UUID, projectId: UUID): Mono<Boolean>
 }
