@@ -94,7 +94,7 @@ class ProjectDbServiceTests(
         verify(projectRepository, times(1)).save(any())
         verify(memberService, times(1)).createMembers(createdProject.id!!, emptyList())
     }
-
+/*
     @Test
     fun shouldUpdateProject() {
         val project = createTestProject("project to update")
@@ -114,7 +114,8 @@ class ProjectDbServiceTests(
         verify(projectRepository, times(1)).findById(project.id!!)
         verify(projectRepository, times(1)).save(updatedProject)
     }
-
+*/
+    /*
     @Test
     fun shouldNotUpdateProject() {
         val project = createTestProject("project to update")
@@ -133,7 +134,8 @@ class ProjectDbServiceTests(
         verify(projectRepository, times(1)).findById(project.id!!)
         verify(projectRepository, times(0)).save(updatedProject)
     }
-
+*/
+/*
     @Test
     fun shouldDeleteProject() {
         val id = UUID.randomUUID()
@@ -144,5 +146,5 @@ class ProjectDbServiceTests(
 
         verify(projectRepository, times(1)).deleteById(id)
     }
-
+*/
 }

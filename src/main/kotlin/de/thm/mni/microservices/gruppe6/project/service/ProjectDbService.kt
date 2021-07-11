@@ -56,8 +56,10 @@ class ProjectDbService(
      * Updates project
      * @param id: project id
      */
-    fun updateProject(projectId: UUID, projectDTO: ProjectDTO): Mono<Project> {
-        return projectRepo.findById(projectId)
+    fun updateProject(projectId: UUID, userId: UUID, projectDTO: ProjectDTO): Mono<Project> {
+        return memberDbService.isMember(projectId, userId)
+            .filter { it }
+            .flatMap { projectRepo.findById(projectId) }
             .map { it.applyProjectDTO(projectDTO) }
             .map { projectRepo.save(it.first)
             it}
@@ -72,10 +74,17 @@ class ProjectDbService(
 
     /**
      * Deletes project by id
-     * @param id: project id
+     * @param projectId: project id
+     * @param userId
      */
-    fun deleteProject(projectId: UUID): Mono<Void> {
-        return projectRepo.deleteById(projectId)
+    fun deleteProject(projectId: UUID, userId: UUID): Mono<Void> {
+        return memberDbService.isAdmin(projectId, userId)
+            .filter {
+                it
+            }
+            .flatMap {
+                projectRepo.deleteById(projectId)
+            }
             .publishOn(Schedulers.boundedElastic()).map {
                 sender.convertAndSend(
                     EventTopic.DataEvents.topic,
@@ -107,4 +116,5 @@ class ProjectDbService(
         }
         return Pair(this, eventList)
     }
+
 }

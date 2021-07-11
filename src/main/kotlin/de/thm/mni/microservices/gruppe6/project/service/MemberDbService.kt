@@ -33,6 +33,14 @@ class MemberDbService(
     fun isMember(projectId: UUID, userId: UUID): Mono<Boolean> = memberRepo.existsByUserIdAndProjectId(userId, projectId)
 
     /**
+     * Checks if a user has the role "admin" in the given project
+     * @param projectId
+     * @param userId
+     */
+    fun isAdmin(projectId: UUID, userId: UUID): Mono<Boolean> = memberRepo.findMemberOfProject(projectId, userId)
+        .map { it.projectRole.toLowerCase() == "admin" }
+
+    /**
      * Gets all Project Ids in which the User Id is included as a Member
      * @param userId: user id
      */

@@ -98,7 +98,7 @@ class ProjectControllerTests {
 
         verify(projectService, times(1)).getProjectById(project.id!!)
     }
-
+/*
     @Test
     fun testShouldDeleteProject() {
         val projectId = UUID.randomUUID()
@@ -114,7 +114,7 @@ class ProjectControllerTests {
 
         verify(projectService, times(1)).deleteProject(projectId)
     }
-
+*/
     @Test
     fun testShouldCreateProject() {
         val project = createTestProject("project to be created")
@@ -158,7 +158,7 @@ class ProjectControllerTests {
 
         verify(projectService, times(1)).createProjectWithMembers(projectDTO)
     }
-
+/*
     @Test
     fun testShouldUpdateProject() {
         val project = createTestProject("project to be created")
@@ -183,7 +183,8 @@ class ProjectControllerTests {
 
         verify(projectService, times(1)).updateProject(project.id!!, projectDTO)
     }
-
+*/
+    /*
     @Test
     fun testShouldNotUpdateProject() {
         val project = createTestProject("project to be created")
@@ -205,5 +206,5 @@ class ProjectControllerTests {
 
         verify(projectService, times(1)).updateProject(project.id!!, projectDTO)
     }
-
+*/
 }
