@@ -50,7 +50,7 @@ class ProjectDbService(
             }
 
         return project.flatMap {
-            memberDbService.createMembers(it.id!!, projectDTO.members).then(Mono.just(it))
+            memberDbService.createMembers(it.id!!, it.creatorId!!, projectDTO.members).then(Mono.just(it))
         }
     }
 
