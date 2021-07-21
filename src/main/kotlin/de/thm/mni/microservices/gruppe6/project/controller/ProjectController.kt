@@ -51,7 +51,7 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
      * @param id: project id
      */
     @PutMapping("/{projectId}/users/{userId}")
-    fun updateProject(@PathVariable projectId: UUID, @PathVariable userId: UUID, @RequestBody projectDTO: ProjectDTO): Mono<Project> = projectService.updateProject(projectId, userId, projectDTO).onErrorResume { Mono.error(ServiceException(HttpStatus.CONFLICT, "Either Project creator or Member(s) does not exist", it)) }
+    fun updateProject(@PathVariable projectId: UUID, @PathVariable userId: UUID, @RequestBody projectDTO: ProjectDTO): Mono<Project> = projectService.updateProject(projectId, userId, projectDTO)
 
     /**
      * Deletes project with given id

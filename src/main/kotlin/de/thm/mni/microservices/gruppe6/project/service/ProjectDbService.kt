@@ -1,15 +1,18 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
 import de.thm.mni.microservices.gruppe6.lib.event.*
+import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.message.ProjectDTO
 import de.thm.mni.microservices.gruppe6.project.model.persistence.Project
 import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import org.springframework.jms.core.JmsTemplate
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
+import reactor.kotlin.core.publisher.switchIfEmpty
 import java.util.*
 
 @Component
@@ -46,9 +49,8 @@ class ProjectDbService(
                 it
             }
 
-        return project.map {
-            memberDbService.createMembers(it.id!!, projectDTO.members).subscribe()
-            it
+        return project.flatMap {
+            memberDbService.createMembers(it.id!!, projectDTO.members).then(Mono.just(it))
         }
     }
 
@@ -59,10 +61,14 @@ class ProjectDbService(
     fun updateProject(projectId: UUID, userId: UUID, projectDTO: ProjectDTO): Mono<Project> {
         return memberDbService.isMember(projectId, userId)
             .filter { it }
+            .switchIfEmpty {
+                Mono.error(ServiceException(HttpStatus.FORBIDDEN, "User $userId is not member of project $projectId"))
+            }
             .flatMap { projectRepo.findById(projectId) }
             .map { it.applyProjectDTO(projectDTO) }
-            .map { projectRepo.save(it.first)
-            it}
+            .flatMap {
+                projectRepo.save(it.first).thenReturn(it)
+            }
             .publishOn(Schedulers.boundedElastic()).map {
                 sender.convertAndSend(
                     EventTopic.DataEvents.topic,
@@ -81,6 +87,9 @@ class ProjectDbService(
         return memberDbService.isAdmin(projectId, userId)
             .filter {
                 it
+            }
+            .switchIfEmpty {
+                Mono.error(ServiceException(HttpStatus.FORBIDDEN, "User $userId is not admin of project $projectId"))
             }
             .flatMap {
                 projectRepo.deleteById(projectId)
