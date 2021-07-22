@@ -43,8 +43,7 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
     @PostMapping("")
     @ResponseStatus(value = HttpStatus.CREATED)
     fun createProject(@RequestBody projectDTO: ProjectDTO): Mono<Project> {
-        val project = projectService.createProjectWithMembers(projectDTO)
-        return project.onErrorResume { Mono.error(ServiceException(httpStatus = HttpStatus.CONFLICT, cause = it)) }
+        return projectService.createProjectWithMembers(projectDTO)
     }
 
     /**

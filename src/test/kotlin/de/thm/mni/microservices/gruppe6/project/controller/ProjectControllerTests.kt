@@ -1,5 +1,6 @@
 package de.thm.mni.microservices.gruppe6.project.controller
 
+import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.message.ProjectDTO
 import de.thm.mni.microservices.gruppe6.project.model.persistence.Project
 import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
@@ -145,7 +146,7 @@ class ProjectControllerTests {
         projectDTO.creatorId = project.creatorId
         projectDTO.members = emptyList()
 
-        given(projectService.createProjectWithMembers(projectDTO)).willReturn(Mono.error(Throwable()))
+        given(projectService.createProjectWithMembers(projectDTO)).willReturn(Mono.error(ServiceException(HttpStatus.BAD_REQUEST, "Members must not be empty/null")))
 
         webTestClient
                 .post()
@@ -154,7 +155,7 @@ class ProjectControllerTests {
                 .bodyValue(projectDTO)
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
-                .expectStatus().isEqualTo(HttpStatus.CONFLICT)
+                .expectStatus().isEqualTo(HttpStatus.BAD_REQUEST)
 
         verify(projectService, times(1)).createProjectWithMembers(projectDTO)
     }
