@@ -35,7 +35,10 @@ class MemberController(@Autowired val memberService: MemberDbService) {
      * @param id: project id
      */
     @GetMapping("")
-    fun getMembers(@PathVariable projectId: UUID): Flux<Member> = memberService.getMembers(projectId)
+    fun getMembers(@PathVariable projectId: UUID): Flux<Member> {
+        logger.debug("getMembers $projectId")
+        return memberService.getMembers(projectId)
+    }
 
     /**
      * Check if user of given id is member of a project with given id
