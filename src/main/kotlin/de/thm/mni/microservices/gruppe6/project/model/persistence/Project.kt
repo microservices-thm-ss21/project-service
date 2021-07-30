@@ -1,6 +1,5 @@
 package de.thm.mni.microservices.gruppe6.project.model.persistence
 
-import de.thm.mni.microservices.gruppe6.project.model.message.ProjectDTO
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table
 import java.time.LocalDateTime
@@ -13,10 +12,10 @@ data class Project(
         var creatorId: UUID?,
         var createTime: LocalDateTime,
 ) {
-    constructor(projectDTO: ProjectDTO) : this(
+    constructor(projectName: String, creatorId: UUID) : this(
             null,
-            projectDTO.name!!,
-            projectDTO.creatorId,
+            projectName,
+            creatorId,
             LocalDateTime.now()
     )
 }

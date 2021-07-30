@@ -1,14 +1,15 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
 import de.thm.mni.microservices.gruppe6.lib.event.*
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectRole
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
-import de.thm.mni.microservices.gruppe6.project.model.message.ProjectDTO
 import de.thm.mni.microservices.gruppe6.project.model.persistence.Project
 import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.jms.core.JmsTemplate
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
@@ -36,6 +37,22 @@ class ProjectDbService(
      * returns stored project
      */
     fun getProjectById(id: UUID): Mono<Project> = projectRepo.findById(id)
+
+    @Transactional
+    fun createProject(projectName: String, creatorId: UUID): Mono<Project> {
+        val project = projectRepo.save(Project(projectName, creatorId))
+            .flatMap {
+                memberDbService.createMember(it.id!!, it.creatorId!!, ProjectRole.ADMIN).then(Mono.just(it))
+            }
+            .publishOn(Schedulers.boundedElastic()).map {
+                sender.convertAndSend(
+                    EventTopic.DataEvents.topic,
+                    ProjectDataEvent(DataEventCode.CREATED, it.id!!)
+                )
+                it
+            }
+        return project
+    }
 
     /**
      * creates new project and stores all given members

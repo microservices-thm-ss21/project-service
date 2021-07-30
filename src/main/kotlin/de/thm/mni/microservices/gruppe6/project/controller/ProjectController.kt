@@ -1,5 +1,6 @@
 package de.thm.mni.microservices.gruppe6.project.controller
 
+import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.message.ProjectDTO
 import de.thm.mni.microservices.gruppe6.project.model.persistence.Project
@@ -11,12 +12,27 @@ import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.switchIfEmpty
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.*
 
 @RestController
 @CrossOrigin
 @RequestMapping("/api/projects")
 class ProjectController(@Autowired val projectService: ProjectDbService) {
+
+    // toDo: remove when jwt works
+    val jwtUser = User(
+        UUID.fromString("a443ffd0-f7a8-44f6-8ad3-87acd1e91042")
+        ,"Peter_Zwegat"
+        ,"password"
+        , "Peter"
+        , "Zwegat"
+        ,"peter.zwegat@mni.thm.de"
+        , LocalDate.now()
+        , LocalDateTime.now()
+        ,"USER"
+        ,null)
 
     /**
      * Returns all stored projects
@@ -40,10 +56,10 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
     /**
      * Creates a new project with members
      */
-    @PostMapping("")
+    @PostMapping("{projectName}")
     @ResponseStatus(value = HttpStatus.CREATED)
-    fun createProject(@RequestBody projectDTO: ProjectDTO): Mono<Project> {
-        return projectService.createProjectWithMembers(projectDTO)
+    fun createProject(@PathVariable projectName: String): Mono<Project> {
+        return projectService.createProject(projectName, jwtUser.id!!)
     }
 
     /**

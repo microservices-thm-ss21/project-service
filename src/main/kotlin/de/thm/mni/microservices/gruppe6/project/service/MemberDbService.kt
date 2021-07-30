@@ -1,10 +1,12 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectRole
 import de.thm.mni.microservices.gruppe6.lib.event.*
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.message.MemberDTO
 import de.thm.mni.microservices.gruppe6.project.model.persistence.Member
 import de.thm.mni.microservices.gruppe6.project.model.persistence.MemberRepository
+import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.jms.core.JmsTemplate
@@ -18,6 +20,7 @@ import java.util.*
 
 @Component
 class MemberDbService(
+    @Autowired private val projectRepo: ProjectRepository,
     @Autowired private val memberRepo: MemberRepository,
     @Autowired private val sender: JmsTemplate
 ) {
@@ -32,9 +35,17 @@ class MemberDbService(
      * Returns true if user is member in project
      * @param projectId
      * @param userId
-     * @@return isMember
+     * @return isMember
      */
     fun isMember(projectId: UUID, userId: UUID): Mono<Boolean> = memberRepo.existsByUserIdAndProjectId(userId, projectId)
+
+    /**
+     * Returns true if user is member in project
+     * @param projectId
+     * @param userId
+     * @return isMember
+     */
+    fun isProjectCreator(projectId: UUID, userId: UUID): Mono<Boolean> = projectRepo.existsByCreatorIdAndProjectId(userId, projectId)
 
     /**
      * Checks if a user has the role "admin" in the given project
@@ -56,30 +67,21 @@ class MemberDbService(
      * Stores all given members
      * @param projectId: project id
      */
-    fun createMembers(projectId: UUID, userId: UUID, members: List<MemberDTO>?): Flux<Member> {
-        return isMember(projectId, userId)
-                .filter{ it }
-                .switchIfEmpty {
-                    Mono.error(ServiceException(HttpStatus.FORBIDDEN, "User $userId is not member of project $projectId"))
-                }
-                .filter { members != null && members.isNotEmpty() }
-                .switchIfEmpty {
-                    Mono.error(ServiceException(HttpStatus.BAD_REQUEST, "Members must not be empty/null"))
-                }
-                .toFlux()
-                .flatMap {
+    fun createMember(projectId: UUID, requesterId: UUID, userId: UUID, role: ProjectRole): Mono<Member> {
+        return projectRepo.findById(projectId).zipWith(isMember(projectId, userId))
+            .filter {
+                it.t2 || it.t1.creatorId == requesterId
+            }.switchIfEmpty {
+                Mono.error(ServiceException(HttpStatus.FORBIDDEN, "No permissions to add member to project"))
+            }.map {
+                it.t1
+            }.map {
+                memberRepo.save(Member(null, projectId, userId, role.name))
+            }.publishOn(Schedulers.boundedElastic())
+            .flatMap {
                     Flux.fromIterable(members!!)
                             .flatMap { memberDTO -> memberRepo.save(Member(projectId, memberDTO)) }
                             .publishOn(Schedulers.boundedElastic()).map {
-                                sender.convertAndSend(
-                                        EventTopic.DomainEvents_ProjectService.topic,
-                                        DomainEventChangedUUID(
-                                                DomainEventCode.PROJECT_CHANGED_MEMBER,
-                                                projectId,
-                                                null,
-                                                it.id
-                                        )
-                                )
                                 sender.convertAndSend(
                                         EventTopic.DomainEvents_ProjectService.topic,
                                         DomainEventChangedStringUUID(
