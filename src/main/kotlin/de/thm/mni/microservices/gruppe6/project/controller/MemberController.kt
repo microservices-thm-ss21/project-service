@@ -32,7 +32,7 @@ class MemberController(@Autowired val memberService: MemberDbService) {
 
     /**
      * Get all members of a given project
-     * @param id: project id
+     * @param projectId: project id
      */
     @GetMapping("")
     fun getMembers(@PathVariable projectId: UUID): Flux<Member> {
@@ -46,7 +46,10 @@ class MemberController(@Autowired val memberService: MemberDbService) {
      * @param userId: user id
      */
     @GetMapping("{userId}/exists")
-    fun isMember(@PathVariable projectId: UUID, @PathVariable userId: UUID): Mono<Boolean> = memberService.isMember(projectId, userId)
+    fun isMember(@PathVariable projectId: UUID, @PathVariable userId: UUID): Mono<Boolean> {
+        logger.debug("isMember $projectId $userId")
+        return memberService.isMember(projectId, userId)
+    }
 
     /**
      * Deletes all given members of given project
