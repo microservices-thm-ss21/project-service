@@ -1,5 +1,6 @@
 package de.thm.mni.microservices.gruppe6.project.controller
 
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectRole
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.message.MemberDTO
 import de.thm.mni.microservices.gruppe6.project.model.persistence.Member
@@ -24,9 +25,18 @@ class MemberController(@Autowired val memberService: MemberDbService) {
      */
     @PostMapping("user/{userId}")
     @ResponseStatus(value = HttpStatus.CREATED)
-    fun createMembers(@PathVariable projectId: UUID, @PathVariable userId: UUID, @RequestBody members: List<MemberDTO>): Flux<Member> {
+    fun createMember(
+        @PathVariable projectId: UUID,
+        @PathVariable userId: UUID,
+        @RequestBody memberDTO: MemberDTO
+    ): Mono<Member> {
         logger.debug("User $userId creates members inside project $projectId ")
-        return memberService.createMembers(projectId, userId, members)
+        return memberService.createMember(
+            projectId,
+            userId,
+            memberDTO.userId,
+            ProjectRole.valueOf(memberDTO.projectRole)
+        )
     }
 
 
@@ -52,7 +62,7 @@ class MemberController(@Autowired val memberService: MemberDbService) {
     }
 
     /**
-     * Deletes all given members of given project
+     * Deletes all members of given project
      * @param projectId: project id
      */
     @DeleteMapping("user/{userId}")
@@ -67,15 +77,19 @@ class MemberController(@Autowired val memberService: MemberDbService) {
      * @param projectId: project id
      */
     @PutMapping("user/{userId}")
-    fun updateMembers(@PathVariable projectId: UUID, @PathVariable userId: UUID, @RequestBody members: List<MemberDTO>): Flux<Member> {
+    fun updateMembers(
+        @PathVariable projectId: UUID,
+        @PathVariable userId: UUID,
+        @RequestBody members: List<MemberDTO>
+    ): Flux<Member> {
         logger.debug("User $userId wants to update members inside project $projectId")
         return memberService.updateMemberRoles(projectId, userId, members).onErrorResume {
             Mono.error(
-                    ServiceException(
-                            HttpStatus.CONFLICT,
-                            "Project or Member(s) does not exist",
-                            it
-                    )
+                ServiceException(
+                    HttpStatus.CONFLICT,
+                    "Project or Member(s) does not exist",
+                    it
+                )
             )
         }
     }

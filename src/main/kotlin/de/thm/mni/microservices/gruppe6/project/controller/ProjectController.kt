@@ -1,11 +1,10 @@
 package de.thm.mni.microservices.gruppe6.project.controller
 
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectDTO
 import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
-import de.thm.mni.microservices.gruppe6.project.model.message.ProjectDTO
 import de.thm.mni.microservices.gruppe6.project.model.persistence.Project
 import de.thm.mni.microservices.gruppe6.project.service.ProjectDbService
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
@@ -23,16 +22,17 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
 
     // toDo: remove when jwt works
     val jwtUser = User(
-        UUID.fromString("a443ffd0-f7a8-44f6-8ad3-87acd1e91042")
-        ,"Peter_Zwegat"
-        ,"password"
-        , "Peter"
-        , "Zwegat"
-        ,"peter.zwegat@mni.thm.de"
-        , LocalDate.now()
-        , LocalDateTime.now()
-        ,"USER"
-        ,null)
+        UUID.fromString("a443ffd0-f7a8-44f6-8ad3-87acd1e91042"),
+        "Peter_Zwegat",
+        "password",
+        "Peter",
+        "Zwegat",
+        "peter.zwegat@mni.thm.de",
+        LocalDate.now(),
+        LocalDateTime.now(),
+        "USER",
+        null
+    )
 
     /**
      * Returns all stored projects
@@ -51,7 +51,8 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
      * @param id: project id
      */
     @GetMapping("{id}")
-    fun getProject(@PathVariable id: UUID): Mono<Project> = projectService.getProjectById(id).switchIfEmpty { Mono.error(ServiceException(HttpStatus.NOT_FOUND)) }
+    fun getProject(@PathVariable id: UUID): Mono<Project> =
+        projectService.getProjectById(id).switchIfEmpty { Mono.error(ServiceException(HttpStatus.NOT_FOUND)) }
 
     /**
      * Creates a new project with members
@@ -67,7 +68,11 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
      * @param id: project id
      */
     @PutMapping("/{projectId}/user/{userId}")
-    fun updateProject(@PathVariable projectId: UUID, @PathVariable userId: UUID, @RequestBody projectDTO: ProjectDTO): Mono<Project> = projectService.updateProject(projectId, userId, projectDTO)
+    fun updateProject(
+        @PathVariable projectId: UUID,
+        @PathVariable userId: UUID,
+        @RequestBody projectDTO: ProjectDTO
+    ): Mono<Project> = projectService.updateProject(projectId, userId, projectDTO)
 
     /**
      * Deletes project with given id
@@ -75,6 +80,7 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
      */
     @DeleteMapping("{projectId}/user/{userId}")
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
-    fun deleteProject(@PathVariable projectId: UUID, @PathVariable userId: UUID): Mono<Void> = projectService.deleteProject(projectId, userId)
+    fun deleteProject(@PathVariable projectId: UUID, @PathVariable userId: UUID): Mono<Void> =
+        projectService.deleteProject(projectId, userId)
 
 }

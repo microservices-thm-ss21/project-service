@@ -1,7 +1,8 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
-import de.thm.mni.microservices.gruppe6.lib.event.*
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectDTO
 import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectRole
+import de.thm.mni.microservices.gruppe6.lib.event.*
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.persistence.Project
 import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
@@ -31,7 +32,8 @@ class ProjectDbService(
     /**
      * returns all stores projects that include the user as a member
      */
-    fun getAllProjectsOfUser(userId: UUID): Flux<Project> = memberDbService.getAllProjectIdsOfMember(userId).flatMap { projectRepo.findById(it) }
+    fun getAllProjectsOfUser(userId: UUID): Flux<Project> =
+        memberDbService.getAllProjectIdsOfMember(userId).flatMap { projectRepo.findById(it) }
 
     /**
      * returns stored project
@@ -40,9 +42,10 @@ class ProjectDbService(
 
     @Transactional
     fun createProject(projectName: String, creatorId: UUID): Mono<Project> {
-        val project = projectRepo.save(Project(projectName, creatorId))
+        return projectRepo.save(Project(projectName, creatorId))
             .flatMap {
-                memberDbService.createMember(it.id!!, it.creatorId!!, ProjectRole.ADMIN).then(Mono.just(it))
+                memberDbService.createMember(it.id!!, it.creatorId!!, it.creatorId!!, ProjectRole.ADMIN)
+                    .then(Mono.just(it))
             }
             .publishOn(Schedulers.boundedElastic()).map {
                 sender.convertAndSend(
@@ -51,24 +54,6 @@ class ProjectDbService(
                 )
                 it
             }
-        return project
-    }
-
-    /**
-     * creates new project and stores all given members
-     */
-    fun createProjectWithMembers(projectDTO: ProjectDTO): Mono<Project> {
-        val project = projectRepo.save(Project(projectDTO))
-            .publishOn(Schedulers.boundedElastic()).map {
-                sender.convertAndSend(
-                    EventTopic.DataEvents.topic,
-                    ProjectDataEvent(DataEventCode.CREATED, it.id!!))
-                it
-            }
-
-        return project.flatMap {
-            memberDbService.createMembers(it.id!!, it.creatorId!!, projectDTO.members).then(Mono.just(it))
-        }
     }
 
     /**
@@ -89,8 +74,9 @@ class ProjectDbService(
             .publishOn(Schedulers.boundedElastic()).map {
                 sender.convertAndSend(
                     EventTopic.DataEvents.topic,
-                    ProjectDataEvent(DataEventCode.UPDATED, projectId))
-                it.second.forEach{(topic, event) -> sender.convertAndSend(topic, event)}
+                    ProjectDataEvent(DataEventCode.UPDATED, projectId)
+                )
+                it.second.forEach { (topic, event) -> sender.convertAndSend(topic, event) }
                 it.first
             }
     }
@@ -114,7 +100,8 @@ class ProjectDbService(
             .publishOn(Schedulers.boundedElastic()).map {
                 sender.convertAndSend(
                     EventTopic.DataEvents.topic,
-                    ProjectDataEvent(DataEventCode.DELETED, projectId))
+                    ProjectDataEvent(DataEventCode.DELETED, projectId)
+                )
                 it
             }
     }
@@ -129,7 +116,8 @@ class ProjectDbService(
 
         if (this.name != projectDTO.name) {
             eventList.add(
-                Pair(EventTopic.DomainEvents_ProjectService.topic,
+                Pair(
+                    EventTopic.DomainEvents_ProjectService.topic,
                     DomainEventChangedString(
                         DomainEventCode.PROJECT_CHANGED_NAME,
                         this.id!!,

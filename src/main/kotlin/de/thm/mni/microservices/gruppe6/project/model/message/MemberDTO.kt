@@ -6,6 +6,6 @@ import java.util.*
  * DTO = Data Transport Object
  */
 data class MemberDTO (
-    var userId: UUID? = null,
-    var projectRole: String? = null
+    val userId: UUID,
+    val projectRole: String
 )

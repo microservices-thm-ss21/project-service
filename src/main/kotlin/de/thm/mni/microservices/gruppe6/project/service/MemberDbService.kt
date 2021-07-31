@@ -15,7 +15,6 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import reactor.kotlin.core.publisher.switchIfEmpty
-import reactor.kotlin.core.publisher.toFlux
 import java.util.*
 
 @Component
@@ -37,7 +36,8 @@ class MemberDbService(
      * @param userId
      * @return isMember
      */
-    fun isMember(projectId: UUID, userId: UUID): Mono<Boolean> = memberRepo.existsByUserIdAndProjectId(userId, projectId)
+    fun isMember(projectId: UUID, userId: UUID): Mono<Boolean> =
+        memberRepo.existsByUserIdAndProjectId(userId, projectId)
 
     /**
      * Returns true if user is member in project
@@ -45,7 +45,7 @@ class MemberDbService(
      * @param userId
      * @return isMember
      */
-    fun isProjectCreator(projectId: UUID, userId: UUID): Mono<Boolean> = projectRepo.existsByCreatorIdAndProjectId(userId, projectId)
+    //fun isProjectCreator(projectId: UUID, userId: UUID): Mono<Boolean> = projectRepo.existsByCreatorIdAndProjectId(userId, projectId)
 
     /**
      * Checks if a user has the role "admin" in the given project
@@ -75,26 +75,22 @@ class MemberDbService(
                 Mono.error(ServiceException(HttpStatus.FORBIDDEN, "No permissions to add member to project"))
             }.map {
                 it.t1
-            }.map {
+            }.flatMap {
                 memberRepo.save(Member(null, projectId, userId, role.name))
             }.publishOn(Schedulers.boundedElastic())
-            .flatMap {
-                    Flux.fromIterable(members!!)
-                            .flatMap { memberDTO -> memberRepo.save(Member(projectId, memberDTO)) }
-                            .publishOn(Schedulers.boundedElastic()).map {
-                                sender.convertAndSend(
-                                        EventTopic.DomainEvents_ProjectService.topic,
-                                        DomainEventChangedStringUUID(
-                                                DomainEventCode.PROJECT_CHANGED_MEMBER,
-                                                projectId,
-                                                it.id,
-                                                null,
-                                                it.projectRole
-                                        )
-                                )
-                                it
-                            }
-                }
+            .map {
+                sender.convertAndSend(
+                    EventTopic.DomainEvents_ProjectService.topic,
+                    DomainEventChangedStringUUID(
+                        DomainEventCode.PROJECT_CHANGED_MEMBER,
+                        projectId,
+                        it.id,
+                        null,
+                        it.projectRole
+                    )
+                )
+                it
+            }
     }
 
     /**
@@ -141,9 +137,9 @@ class MemberDbService(
      * @param id: project id
      */
     fun updateMemberRoles(projectId: UUID, userId: UUID, members: List<MemberDTO>): Flux<Member> {
-        return Flux.fromIterable(members).flatMap { memberRepo.findMemberOfProject(projectId, it.userId!!) }
+        return Flux.fromIterable(members).flatMap { memberRepo.findMemberOfProject(projectId, it.userId) }
             .zipWithIterable(members)
-            .flatMap { memberRepo.save(Member(it.t1.id, it.t1.projectId, it.t1.userId, it.t2.projectRole!!)) }
+            .flatMap { memberRepo.save(Member(it.t1.id, it.t1.projectId, it.t1.userId, it.t2.projectRole)) }
             .publishOn(Schedulers.boundedElastic()).map {
                 sender.convertAndSend(
                     EventTopic.DomainEvents_ProjectService.topic,
