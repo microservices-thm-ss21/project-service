@@ -1,5 +1,6 @@
 package de.thm.mni.microservices.gruppe6.project.model.persistence
 
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectDTO
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Table
 import java.time.LocalDateTime

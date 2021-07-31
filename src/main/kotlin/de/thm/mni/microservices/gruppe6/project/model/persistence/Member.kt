@@ -15,7 +15,7 @@ data class Member(
     constructor(projectId: UUID, memberDTO: MemberDTO) : this(
             null,
             projectId,
-            memberDTO.userId!!,
-            memberDTO.projectRole!!
+            memberDTO.userId,
+            memberDTO.projectRole
     )
 }
