@@ -1,12 +1,14 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
 import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectRole
-import de.thm.mni.microservices.gruppe6.lib.event.*
+import de.thm.mni.microservices.gruppe6.lib.classes.userService.GlobalRole
+import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
+import de.thm.mni.microservices.gruppe6.lib.event.DomainEventChangedStringUUID
+import de.thm.mni.microservices.gruppe6.lib.event.DomainEventChangedUUID
+import de.thm.mni.microservices.gruppe6.lib.event.DomainEventCode
+import de.thm.mni.microservices.gruppe6.lib.event.EventTopic
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
-import de.thm.mni.microservices.gruppe6.project.model.message.MemberDTO
-import de.thm.mni.microservices.gruppe6.project.model.persistence.Member
-import de.thm.mni.microservices.gruppe6.project.model.persistence.MemberRepository
-import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
+import de.thm.mni.microservices.gruppe6.project.model.persistence.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.jms.core.JmsTemplate
@@ -19,6 +21,7 @@ import java.util.*
 
 @Component
 class MemberDbService(
+    @Autowired private val userRepo: UserRepository,
     @Autowired private val projectRepo: ProjectRepository,
     @Autowired private val memberRepo: MemberRepository,
     @Autowired private val sender: JmsTemplate
@@ -26,7 +29,7 @@ class MemberDbService(
 
     /**
      * Gets all Members of a given Project id
-     * @param id: project id
+     * @param projectId: project id
      */
     fun getMembers(projectId: UUID): Flux<Member> = memberRepo.getMembersByProjectID(projectId)
 
@@ -40,22 +43,6 @@ class MemberDbService(
         memberRepo.existsByUserIdAndProjectId(userId, projectId)
 
     /**
-     * Returns true if user is member in project
-     * @param projectId
-     * @param userId
-     * @return isMember
-     */
-    //fun isProjectCreator(projectId: UUID, userId: UUID): Mono<Boolean> = projectRepo.existsByCreatorIdAndProjectId(userId, projectId)
-
-    /**
-     * Checks if a user has the role "admin" in the given project
-     * @param projectId
-     * @param userId
-     */
-    fun isAdmin(projectId: UUID, userId: UUID): Mono<Boolean> = memberRepo.findMemberOfProject(projectId, userId)
-        .map { it.projectRole.toLowerCase() == "admin" }
-
-    /**
      * Gets all Project Ids in which the User Id is included as a Member
      * @param userId: user id
      */
@@ -67,15 +54,12 @@ class MemberDbService(
      * Stores all given members
      * @param projectId: project id
      */
-    fun createMember(projectId: UUID, requesterId: UUID, userId: UUID, role: ProjectRole): Mono<Member> {
-        return projectRepo.findById(projectId).zipWith(isMember(projectId, userId))
-            .filter {
-                it.t2 || it.t1.creatorId == requesterId
-            }.switchIfEmpty {
-                Mono.error(ServiceException(HttpStatus.FORBIDDEN, "No permissions to add member to project"))
-            }.map {
-                it.t1
-            }.flatMap {
+    fun createMember(projectId: UUID, requester: User, userId: UUID, role: ProjectRole): Mono<Member> {
+        return checkHardPermissions(projectId, requester)
+            .flatMap { userRepo.existsById(userId) }
+            .filter { it }
+            .switchIfEmpty(Mono.error(ServiceException(HttpStatus.NOT_FOUND, "User not existing")))
+            .flatMap {
                 memberRepo.save(Member(null, projectId, userId, role.name))
             }.publishOn(Schedulers.boundedElastic())
             .map {
@@ -84,7 +68,7 @@ class MemberDbService(
                     DomainEventChangedStringUUID(
                         DomainEventCode.PROJECT_CHANGED_MEMBER,
                         projectId,
-                        it.id,
+                        userId,
                         null,
                         it.projectRole
                     )
@@ -94,19 +78,25 @@ class MemberDbService(
     }
 
     /**
-     * Delete all members of a project given its id
-     * @param id: project id
+     * Delete a member from a project
+     * @param projectId
+     * @param requester
+     * @param userId
      */
-    fun deleteAllMembers(projectId: UUID, userId: UUID): Mono<Void> {
-        return memberRepo.deleteAllMembersByProjectID(projectId)
-            .publishOn(Schedulers.boundedElastic()).map {
+    fun deleteMember(projectId: UUID, requester: User, userId: UUID): Mono<Void> {
+        return checkHardPermissions(projectId, requester)
+            .flatMap {
+                memberRepo.deleteById(userId)
+            }
+            .publishOn(Schedulers.boundedElastic())
+            .map {
                 sender.convertAndSend(
                     EventTopic.DomainEvents_ProjectService.topic,
                     DomainEventChangedUUID(
-                        DomainEventCode.PROJECT_CHANGED_ALL_MEMBERS,
+                        DomainEventCode.PROJECT_CHANGED_MEMBER,
                         projectId,
-                        null,
-                        null,
+                        userId,
+                        null
                     )
                 )
                 it
@@ -114,44 +104,62 @@ class MemberDbService(
     }
 
     /**
-     * Delete given members of a project given its id
-     * @param id: project id
-     */
-    fun deleteMembers(projectId: UUID, members: List<Member>): Mono<Void> {
-        return Flux.fromIterable(members).publishOn(Schedulers.boundedElastic()).map {
-            sender.convertAndSend(
-                EventTopic.DomainEvents_ProjectService.topic,
-                DomainEventChangedUUID(
-                    DomainEventCode.PROJECT_CHANGED_MEMBER,
-                    projectId,
-                    it.userId,
-                    null
-                )
-            )
-            it.userId
-        }.collectList().flatMap { memberRepo.deleteMembersByProjectID(projectId, members.map { m -> m.userId }) }
-    }
-
-    /**
      * Update the roles of members within a given project
-     * @param id: project id
+     * @param projectId: project id
+     * @param requester
+     * @param userId
+     * @param role
      */
-    fun updateMemberRoles(projectId: UUID, userId: UUID, members: List<MemberDTO>): Flux<Member> {
-        return Flux.fromIterable(members).flatMap { memberRepo.findMemberOfProject(projectId, it.userId) }
-            .zipWithIterable(members)
-            .flatMap { memberRepo.save(Member(it.t1.id, it.t1.projectId, it.t1.userId, it.t2.projectRole)) }
-            .publishOn(Schedulers.boundedElastic()).map {
+    fun updateMemberRole(projectId: UUID, requester: User, userId: UUID, role: ProjectRole): Mono<Member> {
+        return checkHardPermissions(projectId, requester)
+            .flatMap { memberRepo.findMemberOfProject(projectId, userId) }
+            .flatMap { oldMember ->
+                memberRepo.save(Member(oldMember.id, oldMember.projectId, oldMember.userId, role.name))
+                    .map { newMember ->
+                        Pair(oldMember, newMember)
+                    }
+            }
+            .publishOn(Schedulers.boundedElastic())
+            .map {
                 sender.convertAndSend(
                     EventTopic.DomainEvents_ProjectService.topic,
                     DomainEventChangedStringUUID(
                         DomainEventCode.PROJECT_CHANGED_MEMBER,
                         projectId,
-                        it.userId,
-                        null, // Not sure how to get this information.
-                        it.projectRole
+                        userId,
+                        it.first.projectRole,
+                        it.second.projectRole
                     )
                 )
-                it
+                it.second
             }
+    }
+
+    /**
+     * Check if user is member of project or creator
+     * @param projectId
+     * @param user
+     */
+    fun checkSoftPermissions(projectId: UUID, user: User): Mono<UUID> {
+        return Mono.zip(projectRepo.findById(projectId), isMember(projectId, user.id!!))
+            .filter {
+                it.t1.creatorId == user.id!! || it.t2 || user.globalRole != GlobalRole.USER.name
+            }.switchIfEmpty {
+                Mono.error(ServiceException(HttpStatus.FORBIDDEN, "No permissions"))
+            }.map { projectId }
+    }
+
+    /**
+     * check if user is admin global or project or creator
+     * @param projectId
+     * @param user
+     */
+    fun checkHardPermissions(projectId: UUID, user: User): Mono<UUID> {
+        return  Mono.zip(projectRepo.findById(projectId), memberRepo.findMemberOfProject(projectId, user.id!!))
+            .filter{
+                it.t1.creatorId == user.id!! || it.t2.projectRole == ProjectRole.ADMIN.name || user.globalRole == GlobalRole.ADMIN.name
+            }.switchIfEmpty {
+                Mono.error(ServiceException(HttpStatus.FORBIDDEN, "No permissions"))
+            }.map { projectId }
     }
 }

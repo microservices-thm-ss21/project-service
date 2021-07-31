@@ -1,6 +1,5 @@
 package de.thm.mni.microservices.gruppe6.project.controller
 
-import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectDTO
 import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.persistence.Project
@@ -60,27 +59,27 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
     @PostMapping("{projectName}")
     @ResponseStatus(value = HttpStatus.CREATED)
     fun createProject(@PathVariable projectName: String): Mono<Project> {
-        return projectService.createProject(projectName, jwtUser.id!!)
+        return projectService.createProject(projectName, jwtUser)
     }
 
     /**
      * Updates project details with given id
-     * @param id: project id
+     * @param projectId: project id
+     * @param userId
      */
-    @PutMapping("/{projectId}/user/{userId}")
-    fun updateProject(
+    @PutMapping("/{projectId}/name/{projectName}")
+    fun updateProjectName(
         @PathVariable projectId: UUID,
-        @PathVariable userId: UUID,
-        @RequestBody projectDTO: ProjectDTO
-    ): Mono<Project> = projectService.updateProject(projectId, userId, projectDTO)
+        @PathVariable projectName: String
+    ): Mono<Project> = projectService.updateProjectName(projectId, jwtUser, projectName)
 
     /**
      * Deletes project with given id
      * @param id: project id
      */
-    @DeleteMapping("{projectId}/user/{userId}")
+    @DeleteMapping("{projectId}")
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
-    fun deleteProject(@PathVariable projectId: UUID, @PathVariable userId: UUID): Mono<Void> =
-        projectService.deleteProject(projectId, userId)
+    fun deleteProject(@PathVariable projectId: UUID): Mono<Void> =
+        projectService.deleteProject(projectId, jwtUser)
 
 }
