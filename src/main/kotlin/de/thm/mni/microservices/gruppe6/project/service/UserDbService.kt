@@ -1,9 +1,9 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
 
+import de.thm.mni.microservices.gruppe6.lib.classes.userService.UserId
 import de.thm.mni.microservices.gruppe6.lib.event.DataEventCode.*
 import de.thm.mni.microservices.gruppe6.lib.event.UserDataEvent
-import de.thm.mni.microservices.gruppe6.project.model.persistence.User
 import de.thm.mni.microservices.gruppe6.project.model.persistence.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -17,18 +17,18 @@ class UserDbService(@Autowired private val userRepo: UserRepository) {
     /**
      * returns all users
      */
-    fun getAllUsers(): Flux<User> = userRepo.findAll()
+    fun getAllUsers(): Flux<UserId> = userRepo.findAll()
 
     /**
      * returns stored user
      * @param id: user id
      */
-    fun getUserById(id: UUID): Mono<User> = userRepo.findById(id)
+    fun getUserById(id: UUID): Mono<UserId> = userRepo.findById(id)
 
     /**
      * create new user
      */
-    fun createProjectWithMembers(user: User): Mono<User> {
+    fun createProjectWithMembers(user: UserId): Mono<UserId> {
         return userRepo.save(user)
     }
 

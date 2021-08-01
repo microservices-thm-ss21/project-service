@@ -1,5 +1,6 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Member
 import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectRole
 import de.thm.mni.microservices.gruppe6.lib.classes.userService.GlobalRole
 import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
@@ -9,6 +10,7 @@ import de.thm.mni.microservices.gruppe6.lib.event.DomainEventCode
 import de.thm.mni.microservices.gruppe6.lib.event.EventTopic
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.persistence.*
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.jms.core.JmsTemplate
@@ -27,11 +29,18 @@ class MemberDbService(
     @Autowired private val sender: JmsTemplate
 ) {
 
+
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
+
     /**
      * Gets all Members of a given Project id
      * @param projectId: project id
      */
-    fun getMembers(projectId: UUID): Flux<Member> = memberRepo.getMembersByProjectID(projectId)
+    fun getMembers(projectId: UUID): Flux<Member> {
+        logger.debug("getMembers $projectId")
+        return memberRepo.getMembersByProjectID(projectId)
+    }
 
     /**
      * Returns true if user is member in project
@@ -39,15 +48,20 @@ class MemberDbService(
      * @param userId
      * @return isMember
      */
-    fun isMember(projectId: UUID, userId: UUID): Mono<Boolean> =
-        memberRepo.existsByUserIdAndProjectId(userId, projectId)
+    fun isMember(projectId: UUID, userId: UUID): Mono<Boolean> {
+        logger.debug("isMember $projectId $userId")
+        return memberRepo.existsByUserIdAndProjectId(userId, projectId)
+    }
 
     /**
      * Gets all Project Ids in which the User Id is included as a Member
      * @param userId: user id
      */
-    fun getAllProjectIdsOfMember(userId: UUID): Flux<UUID> = memberRepo.findAllByUserId(userId).map {
-        it.projectId
+    fun getAllProjectIdsOfMember(userId: UUID): Flux<UUID> {
+        logger.debug("getAllProjectIdsOfMember $userId")
+        return memberRepo.findAllByUserId(userId).map {
+            it.projectId
+        }
     }
 
     /**
@@ -55,6 +69,7 @@ class MemberDbService(
      * @param projectId: project id
      */
     fun createMember(projectId: UUID, requester: User, userId: UUID, role: ProjectRole): Mono<Member> {
+        logger.debug("createMember $projectId $requester $userId $role")
         return checkHardPermissions(projectId, requester)
             .flatMap { userRepo.existsById(userId) }
             .filter { it }
@@ -84,6 +99,7 @@ class MemberDbService(
      * @param userId
      */
     fun deleteMember(projectId: UUID, requester: User, userId: UUID): Mono<Void> {
+        logger.debug("deleteMember $projectId $requester $userId")
         return checkHardPermissions(projectId, requester)
             .flatMap {
                 memberRepo.deleteById(userId)
@@ -111,6 +127,7 @@ class MemberDbService(
      * @param role
      */
     fun updateMemberRole(projectId: UUID, requester: User, userId: UUID, role: ProjectRole): Mono<Member> {
+        logger.debug("updateMemberRole $projectId $requester $userId $role")
         return checkHardPermissions(projectId, requester)
             .flatMap { memberRepo.findMemberOfProject(projectId, userId) }
             .flatMap { oldMember ->
@@ -141,6 +158,7 @@ class MemberDbService(
      * @param user
      */
     fun checkSoftPermissions(projectId: UUID, user: User): Mono<UUID> {
+        logger.debug("checkSoftPermissions $projectId $user")
         return Mono.zip(projectRepo.findById(projectId), isMember(projectId, user.id!!))
             .filter {
                 it.t1.creatorId == user.id!! || it.t2 || user.globalRole != GlobalRole.USER.name
@@ -155,6 +173,7 @@ class MemberDbService(
      * @param user
      */
     fun checkHardPermissions(projectId: UUID, user: User): Mono<UUID> {
+        logger.debug("checkHardPermissions $projectId $user")
         return  Mono.zip(projectRepo.findById(projectId), memberRepo.findMemberOfProject(projectId, user.id!!))
             .filter{
                 it.t1.creatorId == user.id!! || it.t2.projectRole == ProjectRole.ADMIN.name || user.globalRole == GlobalRole.ADMIN.name

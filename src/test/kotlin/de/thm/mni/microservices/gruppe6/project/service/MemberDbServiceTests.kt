@@ -1,8 +1,7 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
-import de.thm.mni.microservices.gruppe6.project.model.persistence.Member
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Member
 import de.thm.mni.microservices.gruppe6.project.model.persistence.MemberRepository
-import de.thm.mni.microservices.gruppe6.project.model.persistence.Project
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith

@@ -1,6 +1,6 @@
 package de.thm.mni.microservices.gruppe6.project.controller
 
-import de.thm.mni.microservices.gruppe6.project.model.persistence.Member
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Member
 import de.thm.mni.microservices.gruppe6.project.service.MemberDbService
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired

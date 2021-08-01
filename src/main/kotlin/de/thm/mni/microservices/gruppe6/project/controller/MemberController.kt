@@ -1,9 +1,9 @@
 package de.thm.mni.microservices.gruppe6.project.controller
 
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Member
 import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectRole
 import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
-import de.thm.mni.microservices.gruppe6.project.model.persistence.Member
 import de.thm.mni.microservices.gruppe6.project.service.MemberDbService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -45,25 +45,20 @@ class MemberController(@Autowired val memberService: MemberDbService) {
         @PathVariable projectId: UUID,
         @PathVariable userId: UUID,
         @PathVariable userRole: ProjectRole
-    ): Mono<Member> {
-        logger.debug("User $userId creates members inside project $projectId")
-        return memberService.createMember(
+    ): Mono<Member> =  memberService.createMember(
             projectId,
             jwtUser,
             userId,
             userRole
         )
-    }
 
     /**
      * Get all members of a given project
      * @param projectId: project id
      */
     @GetMapping("")
-    fun getMembers(@PathVariable projectId: UUID): Flux<Member> {
-        logger.debug("getMembers $projectId")
-        return memberService.getMembers(projectId)
-    }
+    fun getMembers(@PathVariable projectId: UUID): Flux<Member> = memberService.getMembers(projectId)
+
 
     /**
      * Check if user of given id is member of a project with given id
@@ -82,10 +77,9 @@ class MemberController(@Autowired val memberService: MemberDbService) {
      */
     @DeleteMapping("user/{userId}")
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
-    fun deleteMember(@PathVariable projectId: UUID, @PathVariable userId: UUID): Mono<Void> {
-        logger.debug("Requester wants to delete User $userId inside project $projectId")
-        return memberService.deleteMember(projectId, jwtUser, userId)
-    }
+    fun deleteMember(@PathVariable projectId: UUID, @PathVariable userId: UUID): Mono<Void> =
+        memberService.deleteMember(projectId, jwtUser, userId)
+
 
     /**
      * Update the role of member within a given project
@@ -98,9 +92,8 @@ class MemberController(@Autowired val memberService: MemberDbService) {
         @PathVariable projectId: UUID,
         @PathVariable userId: UUID,
         @PathVariable role: ProjectRole
-    ): Mono<Member> {
-        logger.debug("User $userId wants to update members inside project $projectId")
-        return memberService.updateMemberRole(projectId, jwtUser, userId, role).onErrorResume {
+    ): Mono<Member> =
+        memberService.updateMemberRole(projectId, jwtUser, userId, role).onErrorResume {
             Mono.error(
                 ServiceException(
                     HttpStatus.CONFLICT,
@@ -108,7 +101,6 @@ class MemberController(@Autowired val memberService: MemberDbService) {
                     it
                 )
             )
-        }
     }
 
 }

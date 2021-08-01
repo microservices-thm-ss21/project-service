@@ -1,8 +1,8 @@
 package de.thm.mni.microservices.gruppe6.project.controller
 
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Project
 import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
-import de.thm.mni.microservices.gruppe6.project.model.persistence.Project
 import de.thm.mni.microservices.gruppe6.project.service.ProjectDbService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus

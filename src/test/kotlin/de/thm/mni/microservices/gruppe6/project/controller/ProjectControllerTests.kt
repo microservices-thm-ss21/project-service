@@ -1,6 +1,6 @@
 package de.thm.mni.microservices.gruppe6.project.controller
 
-import de.thm.mni.microservices.gruppe6.project.model.persistence.Project
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Project
 import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
 import de.thm.mni.microservices.gruppe6.project.service.ProjectDbService
 import org.junit.jupiter.api.Test
