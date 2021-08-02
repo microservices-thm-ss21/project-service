@@ -50,7 +50,7 @@ class ProjectDbService(
 
     @Transactional
     fun createProject(projectName: String, requester: User): Mono<Project> {
-        logger.debug("getAllProjects")
+        logger.debug("createProject $projectName $requester")
         return projectRepo.save(Project(projectName, requester.id!!))
             .flatMap {
                 memberDbService.createMember(it.id!!, requester, it.creatorId!!, ProjectRole.ADMIN)
