@@ -35,7 +35,6 @@ class ProjectControllerTests {
         return Project(UUID.randomUUID(), name, UUID.randomUUID(), LocalDateTime.now())
     }
 
-    @Test
     fun testShouldGetEmptyListOfProjects() {
         val projects = emptyList<Project>()
         given(projectService.getAllProjects()).willReturn(Flux.fromIterable(projects))
@@ -51,7 +50,6 @@ class ProjectControllerTests {
         verify(projectService, times(1)).getAllProjects()
     }
 
-    @Test
     fun testShouldGetAllProjects() {
         val projects = listOf(createTestProject("first project"), createTestProject("second project"), createTestProject("third project"))
         given(projectService.getAllProjects()).willReturn(Flux.fromIterable(projects))
@@ -67,7 +65,6 @@ class ProjectControllerTests {
         verify(projectService, times(1)).getAllProjects()
     }
 
-    @Test
     fun testShouldGetProject() {
         val project = createTestProject("test project")
         given(projectService.getProjectById(project.id!!)).willReturn(Mono.just(project))
@@ -83,7 +80,6 @@ class ProjectControllerTests {
         verify(projectService, times(1)).getProjectById(project.id!!)
     }
 
-    @Test
     fun testShouldNotGetProject() {
         val project = createTestProject("test project")
         given(projectService.getProjectById(project.id!!)).willReturn(Mono.empty())

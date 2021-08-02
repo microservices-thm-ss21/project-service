@@ -1,7 +1,7 @@
 package de.thm.mni.microservices.gruppe6.project.controller
 
+import de.thm.mni.microservices.gruppe6.lib.classes.authentication.ServiceAuthentication
 import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Project
-import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.service.ProjectDbService
 import org.springframework.beans.factory.annotation.Autowired
@@ -10,28 +10,12 @@ import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.switchIfEmpty
-import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.*
 
 @RestController
 @CrossOrigin
 @RequestMapping("/api/projects")
 class ProjectController(@Autowired val projectService: ProjectDbService) {
-
-    // toDo: remove when jwt works
-    val jwtUser = User(
-        UUID.fromString("a443ffd0-f7a8-44f6-8ad3-87acd1e91042"),
-        "Peter_Zwegat",
-        "password",
-        "Peter",
-        "Zwegat",
-        "peter.zwegat@mni.thm.de",
-        LocalDate.now(),
-        LocalDateTime.now(),
-        "USER",
-        null
-    )
 
     /**
      * Returns all stored projects
@@ -58,28 +42,29 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
      */
     @PostMapping("{projectName}")
     @ResponseStatus(value = HttpStatus.CREATED)
-    fun createProject(@PathVariable projectName: String): Mono<Project> {
-        return projectService.createProject(projectName, jwtUser)
+    fun createProject(@PathVariable projectName: String, auth: ServiceAuthentication): Mono<Project> {
+        return projectService.createProject(projectName, auth.user!!)
     }
 
     /**
      * Updates project details with given id
      * @param projectId: project id
-     * @param userId
+     * @param projectName: project name
      */
     @PutMapping("/{projectId}/name/{projectName}")
     fun updateProjectName(
         @PathVariable projectId: UUID,
-        @PathVariable projectName: String
-    ): Mono<Project> = projectService.updateProjectName(projectId, jwtUser, projectName)
+        @PathVariable projectName: String,
+        auth: ServiceAuthentication
+    ): Mono<Project> = projectService.updateProjectName(projectId, auth.user!!, projectName)
 
     /**
      * Deletes project with given id
-     * @param id: project id
+     * @param projectId: project id
      */
     @DeleteMapping("{projectId}")
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
-    fun deleteProject(@PathVariable projectId: UUID): Mono<Void> =
-        projectService.deleteProject(projectId, jwtUser)
+    fun deleteProject(@PathVariable projectId: UUID, auth: ServiceAuthentication): Mono<Void> =
+        projectService.deleteProject(projectId, auth.user!!)
 
 }

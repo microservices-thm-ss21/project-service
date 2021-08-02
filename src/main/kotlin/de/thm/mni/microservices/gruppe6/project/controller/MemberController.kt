@@ -1,5 +1,6 @@
 package de.thm.mni.microservices.gruppe6.project.controller
 
+import de.thm.mni.microservices.gruppe6.lib.classes.authentication.ServiceAuthentication
 import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Member
 import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectRole
 import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
@@ -22,20 +23,6 @@ class MemberController(@Autowired val memberService: MemberDbService) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    // toDo: remove when jwt works
-    val jwtUser = User(
-        UUID.fromString("a443ffd0-f7a8-44f6-8ad3-87acd1e91042"),
-        "Peter_Zwegat",
-        "password",
-        "Peter",
-        "Zwegat",
-        "peter.zwegat@mni.thm.de",
-        LocalDate.now(),
-        LocalDateTime.now(),
-        "USER",
-        null
-    )
-
     /**
      * Creates new members for a project with given id
      */
@@ -44,10 +31,11 @@ class MemberController(@Autowired val memberService: MemberDbService) {
     fun createMember(
         @PathVariable projectId: UUID,
         @PathVariable userId: UUID,
-        @PathVariable userRole: ProjectRole
+        @PathVariable userRole: ProjectRole,
+        auth: ServiceAuthentication
     ): Mono<Member> =  memberService.createMember(
             projectId,
-            jwtUser,
+            auth.user!!,
             userId,
             userRole
         )
@@ -77,8 +65,8 @@ class MemberController(@Autowired val memberService: MemberDbService) {
      */
     @DeleteMapping("user/{userId}")
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
-    fun deleteMember(@PathVariable projectId: UUID, @PathVariable userId: UUID): Mono<Void> =
-        memberService.deleteMember(projectId, jwtUser, userId)
+    fun deleteMember(@PathVariable projectId: UUID, @PathVariable userId: UUID, auth: ServiceAuthentication): Mono<Void> =
+        memberService.deleteMember(projectId, auth.user!!, userId)
 
 
     /**
@@ -91,9 +79,10 @@ class MemberController(@Autowired val memberService: MemberDbService) {
     fun updateMemberRole(
         @PathVariable projectId: UUID,
         @PathVariable userId: UUID,
-        @PathVariable role: ProjectRole
+        @PathVariable role: ProjectRole,
+        auth: ServiceAuthentication
     ): Mono<Member> =
-        memberService.updateMemberRole(projectId, jwtUser, userId, role).onErrorResume {
+        memberService.updateMemberRole(projectId, auth.user!!, userId, role).onErrorResume {
             Mono.error(
                 ServiceException(
                     HttpStatus.CONFLICT,
