@@ -9,7 +9,9 @@ import de.thm.mni.microservices.gruppe6.lib.event.DomainEventChangedUUID
 import de.thm.mni.microservices.gruppe6.lib.event.DomainEventCode
 import de.thm.mni.microservices.gruppe6.lib.event.EventTopic
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
-import de.thm.mni.microservices.gruppe6.project.model.persistence.*
+import de.thm.mni.microservices.gruppe6.project.model.persistence.MemberRepository
+import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
+import de.thm.mni.microservices.gruppe6.project.model.persistence.UserRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -174,11 +176,21 @@ class MemberDbService(
      */
     fun checkHardPermissions(projectId: UUID, user: User): Mono<UUID> {
         logger.debug("checkHardPermissions $projectId $user")
-        return  Mono.zip(projectRepo.findById(projectId), memberRepo.findMemberOfProject(projectId, user.id!!))
-            .filter{
-                it.t1.creatorId == user.id!! || it.t2.projectRole == ProjectRole.ADMIN.name || user.globalRole == GlobalRole.ADMIN.name
-            }.switchIfEmpty {
-                Mono.error(ServiceException(HttpStatus.FORBIDDEN, "No permissions"))
-            }.map { projectId }
+
+        return isMember(projectId, user.id!!)
+                .flatMap { userIsMember ->
+                    if (userIsMember) {
+                        Mono.zip(projectRepo.findById(projectId), memberRepo.findMemberOfProject(projectId, user.id!!))
+                                .filter {
+                                    it.t1.creatorId == user.id!! || it.t2.projectRole == ProjectRole.ADMIN.name || user.globalRole == GlobalRole.ADMIN.name
+                                }.map { projectId }
+                    } else {
+                        Mono.just(projectId).filter {
+                            user.globalRole == GlobalRole.ADMIN.name
+                        }
+                    }
+                }.switchIfEmpty {
+                    Mono.error(ServiceException(HttpStatus.FORBIDDEN, "No permissions"))
+                }
     }
 }
