@@ -67,31 +67,57 @@ class MemberDbService(
     }
 
     /**
-     * Stores all given members
-     * @param projectId: project id
+     * Add a member to a project. Idempotent!
+     * @param projectId
+     * @param requester
+     * @param userId
+     * @param role
      */
-    fun createMember(projectId: UUID, requester: User, userId: UUID, role: ProjectRole): Mono<Member> {
-        logger.debug("createMember $projectId $requester $userId $role")
+    fun addMember(projectId: UUID, requester: User, userId: UUID, role: ProjectRole): Mono<Member> {
+        logger.debug("addMember $projectId $requester $userId $role")
+
+        return isMember(projectId, userId)
+                .flatMap { userIsMember ->
+                    if (userIsMember) {
+                        memberRepo.findMemberOfProject(projectId, userId).filter {
+                            role.name == it.projectRole
+                        }.switchIfEmpty {
+                            Mono.error(ServiceException(HttpStatus.CONFLICT, "User is already member of project with a different project role"))
+                        }
+                    } else {
+                        addNewMember(projectId, requester, userId, role)
+                    }
+                }
+    }
+
+    /**
+     * Create a new member and return it
+     * @param projectId
+     * @param requester
+     * @param userId
+     * @param role
+     */
+    fun addNewMember(projectId: UUID, requester: User, userId: UUID, role: ProjectRole): Mono<Member> {
         return checkHardPermissions(projectId, requester)
-            .flatMap { userRepo.existsById(userId) }
-            .filter { it }
-            .switchIfEmpty(Mono.error(ServiceException(HttpStatus.NOT_FOUND, "User not existing")))
-            .flatMap {
-                memberRepo.save(Member(null, projectId, userId, role.name))
-            }.publishOn(Schedulers.boundedElastic())
-            .map {
-                sender.convertAndSend(
-                    EventTopic.DomainEvents_ProjectService.topic,
-                    DomainEventChangedStringUUID(
-                        DomainEventCode.PROJECT_CHANGED_MEMBER,
-                        projectId,
-                        userId,
-                        null,
-                        it.projectRole
+                .flatMap { userRepo.existsById(userId) }
+                .filter { it }
+                .switchIfEmpty(Mono.error(ServiceException(HttpStatus.NOT_FOUND, "User not existing")))
+                .flatMap {
+                    memberRepo.save(Member(null, projectId, userId, role.name))
+                }.publishOn(Schedulers.boundedElastic())
+                .map {
+                    sender.convertAndSend(
+                            EventTopic.DomainEvents_ProjectService.topic,
+                            DomainEventChangedStringUUID(
+                                    DomainEventCode.PROJECT_CHANGED_MEMBER,
+                                    projectId,
+                                    userId,
+                                    null,
+                                    it.projectRole
+                            )
                     )
-                )
-                it
-            }
+                    it
+                }
     }
 
     /**
@@ -100,14 +126,20 @@ class MemberDbService(
      * @param requester
      * @param userId
      */
-    fun deleteMember(projectId: UUID, requester: User, userId: UUID): Mono<Void> {
+    fun deleteMember(projectId: UUID, requester: User, userId: UUID): Mono<UUID> {
         logger.debug("deleteMember $projectId $requester $userId")
         return checkHardPermissions(projectId, requester)
             .flatMap {
-                memberRepo.deleteById(userId)
+                isMember(projectId, userId).filter {
+                    it
+                }.flatMap {
+                    memberRepo.deleteByUserId(userId).thenReturn(userId)
+                }.switchIfEmpty {
+                    Mono.error(ServiceException(HttpStatus.NOT_FOUND, "Member does not exist"))
+                }
             }
             .publishOn(Schedulers.boundedElastic())
-            .map {
+            .map{
                 sender.convertAndSend(
                     EventTopic.DomainEvents_ProjectService.topic,
                     DomainEventChangedUUID(

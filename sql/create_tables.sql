@@ -12,6 +12,7 @@ create table projects (
     CONSTRAINT fk_user
         FOREIGN KEY(creator_id)
             REFERENCES userIds(id)
+                  ON DELETE SET NULL
 );
 
 create table members (

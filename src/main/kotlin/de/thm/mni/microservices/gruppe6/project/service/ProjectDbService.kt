@@ -4,15 +4,18 @@ import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Project
 import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectRole
 import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
 import de.thm.mni.microservices.gruppe6.lib.event.*
+import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import org.springframework.jms.core.JmsTemplate
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
+import reactor.kotlin.core.publisher.switchIfEmpty
 import java.util.*
 
 @Component
@@ -45,7 +48,7 @@ class ProjectDbService(
      */
     fun getProjectById(id: UUID): Mono<Project> {
         logger.debug("getProjectById $id")
-        return projectRepo.findById(id)
+        return projectRepo.findById(id).switchIfEmpty { Mono.error(ServiceException(HttpStatus.NOT_FOUND)) }
     }
 
     @Transactional
@@ -53,7 +56,7 @@ class ProjectDbService(
         logger.debug("createProject $projectName $requester")
         return projectRepo.save(Project(projectName, requester.id!!))
             .flatMap {
-                memberDbService.createMember(it.id!!, requester, it.creatorId!!, ProjectRole.ADMIN)
+                memberDbService.addMember(it.id!!, requester, it.creatorId!!, ProjectRole.ADMIN)
                     .then(Mono.just(it))
             }
             .publishOn(Schedulers.boundedElastic()).map {
@@ -75,6 +78,7 @@ class ProjectDbService(
         logger.debug("updateProjectName $projectId $requester $projectName")
         return memberDbService.checkSoftPermissions(projectId, requester)
             .flatMap { projectRepo.findById(projectId) }
+            .switchIfEmpty { Mono.error(ServiceException(HttpStatus.NOT_FOUND)) }
             .flatMap { oldProject ->
                 projectRepo.save(Project(oldProject.id!!, projectName, oldProject.creatorId, oldProject.createTime))
                     .map { newProject ->
@@ -104,11 +108,16 @@ class ProjectDbService(
      * @param projectId: project id
      * @param user
      */
-    fun deleteProject(projectId: UUID, requester: User): Mono<Void> {
+    fun deleteProject(projectId: UUID, requester: User): Mono<UUID> {
         logger.debug("deleteProject $projectId $requester")
         return memberDbService.checkHardPermissions(projectId, requester)
             .flatMap {
-                projectRepo.deleteById(projectId)
+                projectRepo.existsById(projectId)
+                    .filter { it }
+                    .flatMap {
+                        projectRepo.deleteById(projectId).thenReturn(projectId)
+                    }
+                    .switchIfEmpty { Mono.error(ServiceException(HttpStatus.NOT_FOUND, "Project does not exist")) }
             }
             .publishOn(Schedulers.boundedElastic()).map {
                 sender.convertAndSend(

@@ -33,9 +33,7 @@ class Receiver(private val dataEventService: DataEventService) {
      * @param message a Object message, containing either a DataEvent or DomainEvent within its `object`-payload.
      */
     @JmsListeners(
-        JmsListener(destination = EventTopic.DataEvents.topic, containerFactory = "jmsListenerContainerFactory"),
-        //JmsListener(destination = EventTopic.DomainEvents_UserService.topic, containerFactory = "jmsListenerContainerFactory"),
-        //JmsListener(destination = EventTopic.DomainEvents_ProjectService.topic, containerFactory = "jmsListenerContainerFactory")
+        JmsListener(destination = EventTopic.DataEvents.topic, containerFactory = "jmsListenerContainerFactory")
     )
     fun receive(message: Message) {
         try {

@@ -28,6 +28,8 @@ class BrokerConfig{
     fun jmsListenerContainerFactory(activeMQConnectionFactory: ActiveMQConnectionFactory): DefaultJmsListenerContainerFactory {
         val factory = DefaultJmsListenerContainerFactory()
         factory.setPubSubDomain(true)
+        factory.setSubscriptionDurable(true)
+        factory.setClientId("project-service")
         factory.setConnectionFactory(activeMQConnectionFactory)
         factory.setMessageConverter(jacksonJmsMessageConverter())
         return factory

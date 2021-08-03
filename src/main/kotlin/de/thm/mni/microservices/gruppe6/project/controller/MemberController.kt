@@ -5,6 +5,7 @@ import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Member
 import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectRole
 import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
+import de.thm.mni.microservices.gruppe6.lib.exception.coverUnexpectedException
 import de.thm.mni.microservices.gruppe6.project.service.MemberDbService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -28,24 +29,24 @@ class MemberController(@Autowired val memberService: MemberDbService) {
      */
     @PostMapping("user/{userId}/role/{userRole}")
     @ResponseStatus(value = HttpStatus.CREATED)
-    fun createMember(
+    fun addMember(
         @PathVariable projectId: UUID,
         @PathVariable userId: UUID,
         @PathVariable userRole: ProjectRole,
         auth: ServiceAuthentication
-    ): Mono<Member> =  memberService.createMember(
+    ): Mono<Member> =  memberService.addMember(
             projectId,
             auth.user!!,
             userId,
             userRole
-        )
+        ).onErrorResume { Mono.error(coverUnexpectedException(it)) }
 
     /**
      * Get all members of a given project
      * @param projectId: project id
      */
     @GetMapping("")
-    fun getMembers(@PathVariable projectId: UUID): Flux<Member> = memberService.getMembers(projectId)
+    fun getMembers(@PathVariable projectId: UUID): Flux<Member> = memberService.getMembers(projectId).onErrorResume { Mono.error(coverUnexpectedException(it)) }
 
 
     /**
@@ -56,7 +57,7 @@ class MemberController(@Autowired val memberService: MemberDbService) {
     @GetMapping("{userId}/exists")
     fun isMember(@PathVariable projectId: UUID, @PathVariable userId: UUID): Mono<Boolean> {
         logger.debug("isMember $projectId $userId")
-        return memberService.isMember(projectId, userId)
+        return memberService.isMember(projectId, userId).onErrorResume { Mono.error(coverUnexpectedException(it)) }
     }
 
     /**
@@ -66,7 +67,7 @@ class MemberController(@Autowired val memberService: MemberDbService) {
     @DeleteMapping("user/{userId}")
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
     fun deleteMember(@PathVariable projectId: UUID, @PathVariable userId: UUID, auth: ServiceAuthentication): Mono<Void> =
-        memberService.deleteMember(projectId, auth.user!!, userId)
+        memberService.deleteMember(projectId, auth.user!!, userId).onErrorResume { Mono.error(coverUnexpectedException(it)) }.flatMap { Mono.empty() }
 
 
     /**
@@ -82,14 +83,7 @@ class MemberController(@Autowired val memberService: MemberDbService) {
         @PathVariable role: ProjectRole,
         auth: ServiceAuthentication
     ): Mono<Member> =
-        memberService.updateMemberRole(projectId, auth.user!!, userId, role).onErrorResume {
-            Mono.error(
-                ServiceException(
-                    HttpStatus.CONFLICT,
-                    "Project or Member(s) does not exist",
-                    it
-                )
-            )
-    }
+        memberService.updateMemberRole(projectId, auth.user!!, userId, role)
+                .onErrorResume { Mono.error(coverUnexpectedException(it)) }
 
 }
