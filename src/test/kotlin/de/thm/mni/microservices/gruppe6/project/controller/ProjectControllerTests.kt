@@ -36,11 +36,8 @@ class ProjectControllerTests {
 
     @Autowired private lateinit var webTestClient: WebTestClient
     @MockBean private lateinit var projectService: ProjectDbService
-    @Mock private lateinit var projectRepository: ProjectRepository
 
     private val PROJECTS_URI = "/api/projects"
-
-    private val mockedUser = User(UUID.fromString("a443ffd0-f7a8-44f6-8ad3-87acd1e91042"), "Peter_Zwegat", "password", "Peter", "Zwegat", "peter.zwegat@mni.thm.de", LocalDate.now(), LocalDateTime.now(), ProjectRole.ADMIN.name, null)
 
     @BeforeEach
     fun setUp() {
@@ -113,5 +110,5 @@ class ProjectControllerTests {
 
         verify(projectService, times(1)).getProjectById(project.id!!)
     }
-    
+
 }

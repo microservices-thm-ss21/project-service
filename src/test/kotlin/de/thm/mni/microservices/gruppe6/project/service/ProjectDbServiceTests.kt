@@ -1,17 +1,24 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
 import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Project
+import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Member
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectRole
+import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatExceptionOfType
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.BDDMockito.*
 import org.mockito.Mock;
 import org.mockito.Mockito
 import org.mockito.junit.jupiter.MockitoExtension
+import org.springframework.http.HttpStatus
 import org.springframework.jms.core.JmsTemplate
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
 
@@ -24,8 +31,13 @@ class ProjectDbServiceTests(
 
     private val projectService = ProjectDbService(projectRepository, memberService, sender)
 
-    fun createTestProject(name: String): Project {
+    private fun createTestProject(name: String): Project {
         return Project(UUID.randomUUID(), name, UUID.randomUUID(), LocalDateTime.now())
+    }
+
+    private fun createTestUser(): User {
+        return User(UUID.randomUUID(), "username", "Password", "name", "lastName", "email",
+                LocalDate.now(), LocalDateTime.now(), "ADMIN", LocalDateTime.now())
     }
 
     @Test
@@ -69,81 +81,90 @@ class ProjectDbServiceTests(
 
         verify(projectRepository, times(1)).findById(project.id!!)
     }
-/*
+
     @Test
     fun testShouldCreateProject() {
         val project = createTestProject("project to create")
-        project.id = null
-        val projectDTO = ProjectDTO()
-        projectDTO.name = project.name
-        projectDTO.creatorId = project.creatorId
-        projectDTO.members = emptyList()
-        val createdProject = project.copy(UUID.randomUUID())
+        val user = createTestUser()
+        project.creatorId = user.id
+        val member = Member(UUID.randomUUID(), project.id!!, user.id!!, "ADMIN")
 
-        given(projectRepository.save(any())).willReturn(Mono.just(createdProject))
-        given(memberService.createMembers(createdProject.id!!, projectDTO.creatorId!!, emptyList())).willReturn(Flux.empty())
+        given(projectRepository.save(any())).willReturn(Mono.just(project))
+        given(memberService.addMember(project.id!!, user, user.id!!, ProjectRole.ADMIN)).willReturn(Mono.just(member))
 
-        val returnedProject: Project? = projectService.createProjectWithMembers(projectDTO).block()
+        val returnedProject = projectService.createProject(project.name, user).block()
 
         assertThat(returnedProject).`as`("created project").isNotNull
-        assertThat(returnedProject).`as`("created project").isEqualTo(createdProject)
-
-        verify(projectRepository, times(1)).save(any())
-        verify(memberService, times(1)).createMembers(createdProject.id!!, createdProject.creatorId!!, emptyList())
+        assertThat(returnedProject).`as`("created project").isEqualTo(project)
     }
-    */
 
-/*
     @Test
-    fun shouldUpdateProject() {
+    fun shouldUpdateProjectName() {
         val project = createTestProject("project to update")
-        val updatedProject = project.copy(name = "updated project")
-        val projectDTO = ProjectDTO()
-        projectDTO.name = updatedProject.name
-        projectDTO.creatorId = updatedProject.creatorId
-        projectDTO.members = emptyList()
-
+        val user = createTestUser()
+        given(memberService.checkSoftPermissions(project.id!!, user)).willReturn(Mono.just(project.id!!))
         given(projectRepository.findById(project.id!!)).willReturn(Mono.just(project))
-        given(projectRepository.save(updatedProject)).willReturn(Mono.just(updatedProject))
+        given(projectRepository.save(project)).willReturn(Mono.just(project))
 
-        val returnedProject: Project? = projectService.updateProject(project.id!!, projectDTO).block()
+        val returnedProject = projectService.updateProjectName(project.id!!, user, project.name).block()
         assertThat(returnedProject).`as`("updated project").isNotNull
-        assertThat(returnedProject).`as`("updated project").isEqualTo(updatedProject)
+        assertThat(returnedProject).`as`("updated project").isEqualTo(project)
 
         verify(projectRepository, times(1)).findById(project.id!!)
-        verify(projectRepository, times(1)).save(updatedProject)
+        verify(projectRepository, times(1)).save(project)
     }
-*/
-    /*
+
     @Test
-    fun shouldNotUpdateProject() {
+    fun shouldNotUpdateProject1() {
         val project = createTestProject("project to update")
-        val updatedProject = project.copy(name = "updated project")
-        val projectDTO = ProjectDTO()
-        projectDTO.name = updatedProject.name
-        projectDTO.creatorId = updatedProject.creatorId
-        projectDTO.members = emptyList()
+        val user = createTestUser()
 
+        given(memberService.checkSoftPermissions(project.id!!, user)).willReturn(Mono.error(ServiceException(HttpStatus.FORBIDDEN)))
         given(projectRepository.findById(project.id!!)).willReturn(Mono.empty())
-        given(projectRepository.save(updatedProject)).willReturn(Mono.empty())
+        given(projectRepository.save(project)).willReturn(Mono.error(Throwable()))
+        try {
+            projectService.updateProjectName(project.id!!, user, project.name).block()
+        } catch(e: Throwable) {
+            assertThat(e is ServiceException)
+            assertThat((e as ServiceException).status.value() == HttpStatus.FORBIDDEN.value())
+        }
 
-        val returnedProject: Project? = projectService.updateProject(project.id!!, projectDTO).block()
-        assertThat(returnedProject).`as`("updated project").isNull()
-
-        verify(projectRepository, times(1)).findById(project.id!!)
-        verify(projectRepository, times(0)).save(updatedProject)
+        verify(memberService, times(1)).checkSoftPermissions(project.id!!, user)
+        verify(projectRepository, times(0)).findById(project.id!!)
+        verify(projectRepository, times(0)).save(project)
     }
-*/
-/*
+
+    @Test
+    fun shouldNotUpdateProject2() {
+        val project = createTestProject("project to update")
+        val user = createTestUser()
+
+        given(memberService.checkSoftPermissions(project.id!!, user)).willReturn(Mono.just(project.id!!))
+        given(projectRepository.findById(project.id!!)).willReturn(Mono.empty())
+        given(projectRepository.save(project)).willReturn(Mono.error(Throwable()))
+
+        try {
+            projectService.updateProjectName(project.id!!, user, project.name).block()
+        } catch(e: Throwable) {
+            assertThat(e is ServiceException)
+            assertThat((e as ServiceException).status.value() == HttpStatus.NOT_FOUND.value())
+        }
+
+        verify(memberService, times(1)).checkSoftPermissions(project.id!!, user)
+        verify(projectRepository, times(1)).findById(project.id!!)
+        verify(projectRepository, times(0)).save(project)
+    }
+
     @Test
     fun shouldDeleteProject() {
-        val id = UUID.randomUUID()
-
-        given(projectRepository.deleteById(id)).willReturn(Mono.empty())
-
-        projectService.deleteProject(id).block()
-
-        verify(projectRepository, times(1)).deleteById(id)
+        val project = createTestProject("test")
+        val user = createTestUser()
+        given(memberService.checkHardPermissions(project.id!!, user)).willReturn(Mono.just(project.id!!))
+        given(projectRepository.existsById(project.id!!)).willReturn(Mono.just(true))
+        given(projectRepository.deleteById(project.id!!)).willReturn(Mono.empty())
+        val projectId = projectService.deleteProject(project.id!!, user).block()
+        assertThat(projectId == project.id)
+        verify(projectRepository, times(1)).deleteById(project.id!!)
     }
-*/
+
 }

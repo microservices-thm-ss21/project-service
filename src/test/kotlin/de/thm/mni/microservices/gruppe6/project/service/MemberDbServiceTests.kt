@@ -1,121 +1,202 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
-import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Member
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.*
+import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
+import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.persistence.MemberRepository
+import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
+import de.thm.mni.microservices.gruppe6.project.model.persistence.UserRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.BDDMockito.*
 import org.mockito.Mock
-import org.mockito.Mockito
 import org.mockito.junit.jupiter.MockitoExtension
+import org.springframework.http.HttpStatus
 import org.springframework.jms.core.JmsTemplate
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.time.LocalDate
+import java.time.LocalDateTime
+
 import java.util.*
 
 @ExtendWith(MockitoExtension::class)
 class MemberDbServiceTests(
-        @Mock private val memberRepository: MemberRepository,
+        @Mock private val userRepo: UserRepository,
+        @Mock private val projectRepo: ProjectRepository,
+        @Mock private val memberRepo: MemberRepository,
         @Mock private val sender: JmsTemplate
 ) {
+    private val memberService = MemberDbService(userRepo, projectRepo, memberRepo, sender)
 
-    //private val memberService = MemberDbService(memberRepository, sender)
-
-    fun createTestMember(projectId: UUID, projectRole: String): Member {
-        return Member(UUID.randomUUID(), projectId, UUID.randomUUID(), projectRole)
+    private fun createTestMember(projectId: UUID, projectRole: String, userId: UUID): Member {
+        return Member(UUID.randomUUID(), projectId, userId, projectRole)
     }
-    /*
+
+    private fun createTestUser(): User {
+        return User(UUID.randomUUID(), "username", "Password", "name", "lastName", "email",
+                LocalDate.now(), LocalDateTime.now(), "ADMIN", LocalDateTime.now())
+    }
+
     @Test
     fun testShouldReturnEmptyListOfMembers() {
         val projectId = UUID.randomUUID()
-        given(memberRepository.getMembersByProjectID(projectId)).willReturn(Flux.fromIterable(emptyList()))
+        given(memberRepo.getMembersByProjectID(projectId)).willReturn(Flux.fromIterable(emptyList()))
         val members: List<Member>? = memberService.getMembers(projectId).collectList().block()
 
         assertThat(members).isNotNull
         assertThat(members).isEmpty()
         assertThat(members).isEqualTo(emptyList<Project>())
 
-        verify(memberRepository, times(1)).getMembersByProjectID(projectId)
+        verify(memberRepo, times(1)).getMembersByProjectID(projectId)
     }
+
 
     @Test
     fun testShouldReturnAllMembers() {
         val projectId = UUID.randomUUID()
-        val member1 = createTestMember(projectId, "admin")
-        val member2 = createTestMember(projectId, "normal")
-        val member3 = createTestMember(projectId, "normal")
+        val member1 = createTestMember(projectId, "admin", UUID.randomUUID())
+        val member2 = createTestMember(projectId, "normal", UUID.randomUUID())
+        val member3 = createTestMember(projectId, "normal", UUID.randomUUID())
         val memberList = listOf(member1, member2, member3)
 
-        given(memberRepository.getMembersByProjectID(projectId)).willReturn(Flux.fromIterable(memberList))
+        given(memberRepo.getMembersByProjectID(projectId)).willReturn(Flux.fromIterable(memberList))
         val members: List<Member>? = memberService.getMembers(projectId).collectList().block()
 
         assertThat(members).`as`("list of members of project with id $projectId").isNotNull
         assertThat(members).`as`("list of members of project with id $projectId").hasSize(memberList.size)
         members!!.withIndex().forEach { assertThat(it.value).`as`("member $it.index").isEqualTo(memberList[it.index]) }
 
-        Mockito.verify(memberRepository, times(1)).getMembersByProjectID(projectId)
-    }
-*/
-//    @Test
-//    fun testShouldCreateMembers() {
-//        val projectId = UUID.randomUUID()
-//        val member1 = createTestMember(projectId, "admin")
-//        member1.id = null
-//        val member2 = createTestMember(projectId, "normal")
-//        member2.id = null
-//        val member3 = createTestMember(projectId, "normal")
-//        member3.id = null
-//        val memberList = listOf(member1, member2, member3)
-//
-//        val memberDTOList = memberList.map {
-//            val memberDTO = MemberDTO()
-//            memberDTO.projectRole = it.projectRole
-//            memberDTO.userId = it.userId
-//            memberDTO
-//        }
-//
-//        val createdMemberList = memberList.map { it.copy(UUID.randomUUID()) }
-//
-//        memberList.withIndex().map{ given(memberRepository.save(it.value)).willReturn(Mono.just(createdMemberList[it.index])) }
-//        val members: List<Member>? = memberService.createMembers(projectId, member1.userId, memberDTOList).collectList().block()
-//
-//        assertThat(members).`as`("list of created members of project with id $projectId").isNotNull
-//        assertThat(members).`as`("list of created members of project with id $projectId").hasSize(createdMemberList.size)
-//        members!!.withIndex().forEach { assertThat(it.value).`as`("member $it.index").isEqualTo(createdMemberList[it.index]) }
-//
-//        Mockito.verify(memberRepository, times(memberList.size)).save(any())
-//    }
-/*
-    @Test
-    fun shouldDeleteAllMembers() {
-        val projectId = UUID.randomUUID()
-        val userId = UUID.randomUUID()
-
-        given(memberRepository.deleteAllMembersByProjectID(projectId)).willReturn(Mono.empty())
-
-        memberService.deleteAllMembers(projectId, userId).block()
-
-        verify(memberRepository, times(1)).deleteAllMembersByProjectID(projectId)
+        verify(memberRepo, times(1)).getMembersByProjectID(projectId)
     }
 
     @Test
-    fun shouldDeleteMembers() {
+    fun testShouldAddMember1() {
+        // Member already in Project
+        val service = spy(memberService)
         val projectId = UUID.randomUUID()
-        val member1 = createTestMember(projectId, "admin")
-        val member2 = createTestMember(projectId, "normal")
-        val member3 = createTestMember(projectId, "normal")
-        val memberList = listOf(member1, member2, member3)
-        val memberIdList = memberList.map { it.userId }
+        val user = createTestUser()
+        val member = createTestMember(projectId, ProjectRole.ADMIN.name, UUID.randomUUID())
+        doReturn(Mono.just(true)).`when`(service).isMember(projectId, member.userId)
+        given(memberRepo.findMemberOfProject(projectId, member.userId)).willReturn(Mono.just(member))
 
-        given(memberRepository.deleteMembersByProjectID(projectId, memberIdList)).willReturn(Mono.empty())
+        val returnedMember = service.addMember(projectId, user, member.userId, ProjectRole.valueOf(member.projectRole)).block()
 
-        memberService.deleteMembers(projectId, memberList).block()
-
-        verify(memberRepository, times(1)).deleteMembersByProjectID(projectId, memberIdList)
+        assertThat(returnedMember).`as`("list of created members of project with id $projectId").isNotNull
+        assertThat(returnedMember).`as`("returnedMember").isEqualTo(member)
     }
 
- */
+    @Test
+    fun testShouldAddMember2() {
+        // Member not in Project
+        val projectId = UUID.randomUUID()
+        val user = createTestUser()
+        val member = createTestMember(projectId, ProjectRole.ADMIN.name, UUID.randomUUID())
+        val service = spy(memberService)
+        doReturn(Mono.just(false)).`when`(service).isMember(projectId, member.userId)
+        doReturn(Mono.just(member)).`when`(service).addNewMember(projectId, user, member.userId, ProjectRole.valueOf(member.projectRole))
+
+        val returnedMember = service.addMember(projectId, user, member.userId, ProjectRole.valueOf(member.projectRole)).block()
+
+        assertThat(returnedMember).`as`("list of created members of project with id $projectId").isNotNull
+        assertThat(returnedMember).`as`("returnedMember").isEqualTo(member)
+    }
+
+    @Test
+    fun testShouldNotAddMember() {
+        // Member with different role in project
+        val projectId = UUID.randomUUID()
+        val user = createTestUser()
+        val member = createTestMember(projectId, ProjectRole.ADMIN.name, UUID.randomUUID())
+        val memberOld = member.copy()
+        val service = spy(memberService)
+        memberOld.projectRole = ProjectRole.USER.name
+        doReturn(Mono.just(true)).`when`(service).isMember(projectId, member.userId)
+        given(memberRepo.findMemberOfProject(projectId, member.userId)).willReturn(Mono.just(memberOld))
+
+        var error: Throwable? = null
+        try{
+            service.addMember(projectId, user, member.userId, ProjectRole.valueOf(member.projectRole)).block()
+        } catch (e: Throwable) {
+            error = e
+        }
+        assertThat(error != null)
+        assertThat(error is ServiceException)
+        assertThat((error as ServiceException).status.value() == HttpStatus.NOT_FOUND.value())
+    }
+
+    @Test
+    fun shouldDeleteMember() {
+        val service = spy(memberService)
+        val projectId = UUID.randomUUID()
+        val user = createTestUser()
+        val member = createTestMember(projectId, ProjectRole.ADMIN.name, UUID.randomUUID())
+
+        doReturn(Mono.just(projectId)).`when`(service).checkHardPermissions(projectId, user)
+        doReturn(Mono.just(true)).`when`(service).isMember(projectId, member.userId)
+        given(memberRepo.deleteByUserIdAndProjectId(member.userId, projectId)).willReturn(Mono.empty())
+
+        val deletedMemberId = service.deleteMember(projectId, user, member.userId).block()
+
+        assertThat(deletedMemberId).isEqualTo(member.userId)
+
+        verify(service, times(1)).checkHardPermissions(projectId, user)
+        verify(service, times(1)).isMember(projectId, member.userId)
+        verify(memberRepo, times(1)).deleteByUserIdAndProjectId(member.userId, projectId)
+    }
+
+    @Test
+    fun shouldNotDeleteMember1() {
+        val service = spy(memberService)
+        val projectId = UUID.randomUUID()
+        val user = createTestUser()
+        val member = createTestMember(projectId, ProjectRole.ADMIN.name, UUID.randomUUID())
+
+        doThrow(ServiceException(HttpStatus.FORBIDDEN)).`when`(service).checkHardPermissions(projectId, user)
+        given(memberRepo.deleteByUserIdAndProjectId(member.userId, projectId)).willReturn(Mono.empty())
+
+        var error: Throwable? = null
+        try {
+            service.deleteMember(projectId, user, member.userId).block()
+        } catch (e: Throwable) {
+            error = e
+        }
+        assertThat(error != null)
+        assertThat(error is ServiceException)
+        assertThat((error as ServiceException).status.value() == HttpStatus.FORBIDDEN.value())
+
+        verify(service, times(1)).checkHardPermissions(projectId, user)
+        verify(service, times(0)).isMember(projectId, member.userId)
+        verify(memberRepo, times(0)).deleteByUserIdAndProjectId(member.userId, projectId)
+    }
+
+    @Test
+    fun shouldNotDeleteMember2() {
+        val service = spy(memberService)
+        val projectId = UUID.randomUUID()
+        val user = createTestUser()
+        val member = createTestMember(projectId, ProjectRole.ADMIN.name, UUID.randomUUID())
+
+        doReturn(Mono.just(projectId)).`when`(service).checkHardPermissions(projectId, user)
+        doReturn(Mono.just(false)).`when`(service).isMember(projectId, member.userId)
+        given(memberRepo.deleteByUserIdAndProjectId(member.userId, projectId)).willReturn(Mono.empty())
+
+        var error: Throwable? = null
+        try {
+            service.deleteMember(projectId, user, member.userId).block()
+        } catch (e: Throwable) {
+            error = e
+        }
+        assertThat(error != null)
+        assertThat(error is ServiceException)
+        assertThat((error as ServiceException).status.value() == HttpStatus.NOT_FOUND.value())
+
+        verify(service, times(1)).checkHardPermissions(projectId, user)
+        verify(service, times(1)).isMember(projectId, member.userId)
+        verify(memberRepo, times(0)).deleteByUserIdAndProjectId(member.userId, projectId)
+    }
+
 }
 
 
