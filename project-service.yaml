@@ -24,24 +24,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ArrayOfProjects'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
         default:
           description: unexpected error
           content:
             application/json:
               schema:
                 type: string
-
+  /{projectName}:
     post:
       description: Creates a new Project
       tags:
         - Projects
-      requestBody:
-        description: projectDTO
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProjectDTO'
+      parameters:
+        - name: projectName
+          in: path
+          description: Name of the new project
+          required: true
+          schema:
+            type: string
       responses:
         '201':
           description: Created Project
@@ -49,8 +51,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Project'
-        '409':
-          description: Project creator does not exist
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
         default:
           description: unexpected error
           content:
@@ -58,13 +60,13 @@ paths:
               schema:
                 type: string
 
-  /{id}:
+  /{projectId}:
     get:
-      description: Get project of the given id
+      description: Get project with the given id
       tags:
         - Projects
       parameters:
-        - name: id
+        - name: projectId
           in: path
           description: ID of project
           required: true
@@ -79,6 +81,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Project'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
         '404':
           description: project not found
         default:
@@ -87,43 +91,6 @@ paths:
            application/json:
               schema:
                 type: string
-
-    put:
-      description: Update project of the given id
-      tags:
-        - Projects
-      parameters:
-        - name: id
-          in: path
-          description: ID of project
-          required: true
-          schema:
-            type: string
-            format: uuid
-            example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
-      requestBody:
-        description: ProjectDTO
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProjectDTO'
-      responses:
-        '200':
-          description: Updated Project
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Project'
-        '409':
-          description: Either Project creator or Member(s) does not exist
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                type: string
-
     delete:
       description: Delete project of the given id
       tags:
@@ -140,6 +107,10 @@ paths:
       responses:
         '204':
           description: Successfully deleted project
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Requester does not have correct access rights
         default:
           description: unexpected error
           content:
@@ -147,13 +118,130 @@ paths:
               schema:
                 type: string
 
-  /{id}/members:
+  /{projectId}/name/{projectName}:
+    put:
+      description: Update project name with the given id
+      tags:
+        - Projects
+      parameters:
+        - name: projectId
+          in: path
+          description: ID of project
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
+        - name: projectName
+          in: path
+          description: New name of the project
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Updated Project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Requester does not have correct access rights
+        '404':
+          description: Project not found
+        '409':
+          description: Either Project creator or Member(s) does not exist
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                type: string
+  /user/{userId}:
+    put:
+      description: Get all projects of the user
+      tags:
+        - Projects
+      parameters:
+        - name: userId
+          in: path
+          description: ID of the user
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
+      responses:
+        '200':
+          description: All projects of user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProjects'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /{projectId}/members/user/{userId}/role/{userRole}:
+    post:
+      description: Add a user to a project and give him/her a projectRole
+      tags:
+        - Members
+      parameters:
+        - name: projectId
+          in: path
+          description: ID of project
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
+        - name: userId
+          in: path
+          description: ID of user
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
+        - name: userRole
+          in: path
+          description: Role of user
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: All projects of user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProjects'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '409':
+          description: Authentication information is missing or invalid
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /{projectId}/members:
     get:
       description: Get all members of a project with the given id
       tags:
         - Members
       parameters:
-        - name: id
+        - name: projectId
           in: path
           description: ID of project
           required: true
@@ -168,19 +256,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ArrayOfMembers'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
         default:
           description: unexpected error
           content:
             application/json:
               schema:
                 type: string
-
-    post:
-      description: Creates new members for a project with the given id
+  /{projectId}/members/{userId}/exists:
+    get:
       tags:
         - Members
+      description: Returns the information if a user is member of a project
       parameters:
-        - name: id
+        - name: projectId
           in: path
           description: ID of project
           required: true
@@ -188,22 +278,23 @@ paths:
             type: string
             format: uuid
             example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
-      requestBody:
-        description: List of MemberDTOs
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ArrayOfMemberDTOs'
+        - name: userId
+          in: path
+          description: ID of user
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
       responses:
-        '201':
-          description: Created Members for Project with given ID
+        '200':
+          description: Information if user is member of project or not
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ArrayOfMembers'
-        '409':
-          description: Project or Member(s) does not exist
+                type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
         default:
           description: unexpected error
           content:
@@ -211,12 +302,13 @@ paths:
               schema:
                 type: string
 
+  /{projectId}/members/user/{userId}/role/{role}:
     put:
-      description: Update members of a project with the given id
+      description: Update the user role inside project
       tags:
         - Members
       parameters:
-        - name: id
+        - name: projectId
           in: path
           description: ID of project
           required: true
@@ -224,13 +316,20 @@ paths:
             type: string
             format: uuid
             example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
-      requestBody:
-        description: List of MemberDTOs
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ArrayOfMemberDTOs'
+        - name: userId
+          in: path
+          description: ID of user
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
+        - name: role
+          in: path
+          description: new role
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Updated Members of Project with given ID
@@ -238,6 +337,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ArrayOfMembers'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
         '409':
           description: Project or Member(s) does not exist
         default:
@@ -246,15 +347,23 @@ paths:
             application/json:
               schema:
                 type: string
-
+  /{projectId}/members/user/{userId}:
     delete:
-      description: Delete all members of a project with the given id
+      description: Delete a user from a project
       tags:
         - Members
       parameters:
-        - name: id
+        - name: projectId
           in: path
           description: ID of project
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 'e86c57cb-d703-4f39-9632-3782cb5500e8'
+        - name: userId
+          in: path
+          description: ID of user
           required: true
           schema:
             type: string
@@ -270,7 +379,18 @@ paths:
               schema:
                 type: string
 
+security:
+  - bearerAuth: []
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    UnauthorizedError:
+      description: Authentication information is missing or invalid
   schemas:
     Project:
       type: object
@@ -286,29 +406,10 @@ components:
         createTime:
           type: string
           format: date-time
-
     ArrayOfProjects:
       type: array
       items:
         $ref: '#/components/schemas/Project'
-
-    ProjectDTO:
-      type: object
-      required:
-        - name
-        - creatorId
-        - members
-      properties:
-        name:
-          type: string
-        creatorId:
-          type: string
-          format: uuid
-        members:
-          type: array
-          items:
-            $ref: '#/components/schemas/MemberDTO'
-
     Member:
       type: object
       properties:
@@ -323,27 +424,7 @@ components:
           format: uuid
         projectRole:
           type: string
-
     ArrayOfMembers:
       type: array
       items:
         $ref: '#/components/schemas/Member'
-
-    MemberDTO:
-      type: object
-      required:
-        - userId
-        - projectRole
-      properties:
-        userId:
-          type: string
-          format: uuid
-          example: "8d8fa2d7-b999-4e07-9739-c563ee9fb12b"
-        projectRole:
-          type: string
-          example: "boss"
-
-    ArrayOfMemberDTOs:
-      type: array
-      items:
-        $ref: '#/components/schemas/MemberDTO'

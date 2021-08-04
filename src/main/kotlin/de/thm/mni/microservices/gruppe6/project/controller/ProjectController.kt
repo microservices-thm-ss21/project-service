@@ -33,11 +33,11 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
 
     /**
      * Returns project with given id
-     * @param id: project id
+     * @param projectId
      */
-    @GetMapping("{id}")
-    fun getProject(@PathVariable id: UUID): Mono<Project> =
-        projectService.getProjectById(id)
+    @GetMapping("{projectId}")
+    fun getProject(@PathVariable projectId: UUID): Mono<Project> =
+        projectService.getProjectById(projectId)
             .onErrorResume { Mono.error(coverUnexpectedException(it)) }
 
     /**
