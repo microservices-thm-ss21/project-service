@@ -17,7 +17,7 @@ import org.springframework.jms.support.converter.MessageType
  */
 @Configuration
 @EnableJms
-class BrokerConfig{
+class BrokerConfig {
 
     /**
      * Creates the Listener Container Factory to be used within the receiver to create a session and convert the message

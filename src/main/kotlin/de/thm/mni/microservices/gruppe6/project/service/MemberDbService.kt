@@ -23,6 +23,9 @@ import reactor.core.scheduler.Schedulers
 import reactor.kotlin.core.publisher.switchIfEmpty
 import java.util.*
 
+/**
+ * Implements the functionality to handle members.
+ */
 @Component
 class MemberDbService(
     @Autowired private val userRepo: UserRepository,
@@ -31,13 +34,11 @@ class MemberDbService(
     @Autowired private val sender: JmsTemplate
 ) {
 
-
     private val logger = LoggerFactory.getLogger(this::class.java)
-
 
     /**
      * Gets all Members of a given Project id
-     * @param projectId: project id
+     * @param projectId
      */
     fun getMembers(projectId: UUID): Flux<Member> {
         logger.debug("getMembers $projectId")
@@ -57,7 +58,7 @@ class MemberDbService(
 
     /**
      * Gets all Project Ids in which the User Id is included as a Member
-     * @param userId: user id
+     * @param userId
      */
     fun getAllProjectIdsOfMember(userId: UUID): Flux<UUID> {
         logger.debug("getAllProjectIdsOfMember $userId")
@@ -70,61 +71,68 @@ class MemberDbService(
      * Add a member to a project. Idempotent!
      * @param projectId
      * @param requester
-     * @param userId
-     * @param role
+     * @param userId of user that should be added
+     * @param role projectRole of the new member
      */
     fun addMember(projectId: UUID, requester: User, userId: UUID, role: ProjectRole): Mono<Member> {
         logger.debug("addMember $projectId $requester $userId $role")
-
         return isMember(projectId, userId)
-                .flatMap { userIsMember ->
-                    if (userIsMember) {
-                        memberRepo.findMemberOfProject(projectId, userId).filter {
-                            role.name == it.projectRole
-                        }.switchIfEmpty {
-                            Mono.error(ServiceException(HttpStatus.CONFLICT, "User is already member of project with a different project role"))
-                        }
-                    } else {
-                        addNewMember(projectId, requester, userId, role)
+            .flatMap { userIsMember ->
+                if (userIsMember) {
+                    memberRepo.findMemberOfProject(projectId, userId).filter {
+                        role.name == it.projectRole
+                    }.switchIfEmpty {
+                        Mono.error(
+                            ServiceException(
+                                HttpStatus.CONFLICT,
+                                "User is already member of project with a different project role"
+                            )
+                        )
                     }
+                } else {
+                    addNewMember(projectId, requester, userId, role)
                 }
+            }
     }
 
     /**
-     * Create a new member and return it
+     * Create a new member and return it. Checks if the requester has the permission to do so.
+     * Sends all necessary events.
      * @param projectId
      * @param requester
-     * @param userId
-     * @param role
+     * @param userId of user that should be added
+     * @param role projectRole of the new member
      */
     fun addNewMember(projectId: UUID, requester: User, userId: UUID, role: ProjectRole): Mono<Member> {
         return checkHardPermissions(projectId, requester)
-                .flatMap { userRepo.existsById(userId) }
-                .filter { it }
-                .switchIfEmpty(Mono.error(ServiceException(HttpStatus.NOT_FOUND, "User not existing")))
-                .flatMap {
-                    memberRepo.save(Member(null, projectId, userId, role.name))
-                }.publishOn(Schedulers.boundedElastic())
-                .map {
-                    sender.convertAndSend(
-                            EventTopic.DomainEvents_ProjectService.topic,
-                            DomainEventChangedStringUUID(
-                                    DomainEventCode.PROJECT_CHANGED_MEMBER,
-                                    projectId,
-                                    userId,
-                                    null,
-                                    it.projectRole
-                            )
+            .flatMap { userRepo.existsById(userId) }
+            .filter { it }
+            .switchIfEmpty(Mono.error(ServiceException(HttpStatus.NOT_FOUND, "User not existing")))
+            .flatMap {
+                memberRepo.save(Member(null, projectId, userId, role.name))
+            }.publishOn(Schedulers.boundedElastic())
+            .map {
+                sender.convertAndSend(
+                    EventTopic.DomainEvents_ProjectService.topic,
+                    DomainEventChangedStringUUID(
+                        DomainEventCode.PROJECT_CHANGED_MEMBER,
+                        projectId,
+                        userId,
+                        null,
+                        it.projectRole
                     )
-                    it
-                }
+                )
+                it
+            }
     }
 
     /**
-     * Delete a member from a project
+     * Delete a member from a project. Checks if the requester has the permission to do so.
      * @param projectId
      * @param requester
-     * @param userId
+     * @param userId of user that should be deleted
+     * @throws ServiceException when permissions are not fulfilled or the member does not exist
+     * @return userId of the deleted member
      */
     fun deleteMember(projectId: UUID, requester: User, userId: UUID): Mono<UUID> {
         logger.debug("deleteMember $projectId $requester $userId")
@@ -139,7 +147,7 @@ class MemberDbService(
                 }
             }
             .publishOn(Schedulers.boundedElastic())
-            .map{
+            .map {
                 sender.convertAndSend(
                     EventTopic.DomainEvents_ProjectService.topic,
                     DomainEventChangedUUID(
@@ -154,11 +162,12 @@ class MemberDbService(
     }
 
     /**
-     * Update the roles of members within a given project
-     * @param projectId: project id
+     * Update the roles of members within a given project.
+     * Checks if the requester has the permission to do so.
+     * @param projectId
      * @param requester
-     * @param userId
-     * @param role
+     * @param userId of user that should be updated
+     * @param role new ProjectRole
      */
     fun updateMemberRole(projectId: UUID, requester: User, userId: UUID, role: ProjectRole): Mono<Member> {
         logger.debug("updateMemberRole $projectId $requester $userId $role")
@@ -187,7 +196,9 @@ class MemberDbService(
     }
 
     /**
-     * Check if user is member of project or creator
+     * Checks if a user fulfills the soft permissions.
+     * Are fulfilled if the user is the projectCreator, the user is project member or the user is a global admin
+     * @throws ServiceException when user does not fulfill
      * @param projectId
      * @param user
      */
@@ -202,27 +213,28 @@ class MemberDbService(
     }
 
     /**
-     * check if user is admin global or project or creator
+     * Checks if a user fulfills the hard permissions.
+     * Are fulfilled if the user is the projectCreator, the user is project admin or the user is a global admin
+     * @throws ServiceException when user does not fulfill
      * @param projectId
      * @param user
      */
     fun checkHardPermissions(projectId: UUID, user: User): Mono<UUID> {
         logger.debug("checkHardPermissions $projectId $user")
-
         return isMember(projectId, user.id!!)
-                .flatMap { userIsMember ->
-                    if (userIsMember) {
-                        Mono.zip(projectRepo.findById(projectId), memberRepo.findMemberOfProject(projectId, user.id!!))
-                                .filter {
-                                    it.t1.creatorId == user.id!! || it.t2.projectRole == ProjectRole.ADMIN.name || user.globalRole == GlobalRole.ADMIN.name
-                                }.map { projectId }
-                    } else {
-                        Mono.just(projectId).filter {
-                            user.globalRole == GlobalRole.ADMIN.name
-                        }
+            .flatMap { userIsMember ->
+                if (userIsMember) {
+                    Mono.zip(projectRepo.findById(projectId), memberRepo.findMemberOfProject(projectId, user.id!!))
+                        .filter {
+                            it.t1.creatorId == user.id!! || it.t2.projectRole == ProjectRole.ADMIN.name || user.globalRole == GlobalRole.ADMIN.name
+                        }.map { projectId }
+                } else {
+                    Mono.just(projectId).filter {
+                        user.globalRole == GlobalRole.ADMIN.name
                     }
-                }.switchIfEmpty {
-                    Mono.error(ServiceException(HttpStatus.FORBIDDEN, "No permissions"))
                 }
+            }.switchIfEmpty {
+                Mono.error(ServiceException(HttpStatus.FORBIDDEN, "No permissions"))
+            }
     }
 }

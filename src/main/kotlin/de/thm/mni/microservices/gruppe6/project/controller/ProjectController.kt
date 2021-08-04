@@ -2,7 +2,6 @@ package de.thm.mni.microservices.gruppe6.project.controller
 
 import de.thm.mni.microservices.gruppe6.lib.classes.authentication.ServiceAuthentication
 import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Project
-import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.lib.exception.coverUnexpectedException
 import de.thm.mni.microservices.gruppe6.project.service.ProjectDbService
 import org.springframework.beans.factory.annotation.Autowired
@@ -10,7 +9,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.kotlin.core.publisher.switchIfEmpty
 import java.util.*
 
 @RestController
@@ -23,7 +21,7 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
      */
     @GetMapping("")
     fun getAllProjects(): Flux<Project> = projectService.getAllProjects()
-            .onErrorResume { Mono.error(coverUnexpectedException(it)) }
+        .onErrorResume { Mono.error(coverUnexpectedException(it)) }
 
     /**
      * Returns all stored projects in which the user is included as a member
@@ -49,7 +47,7 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
     @ResponseStatus(value = HttpStatus.CREATED)
     fun createProject(@PathVariable projectName: String, auth: ServiceAuthentication): Mono<Project> {
         return projectService.createProject(projectName, auth.user!!)
-                .onErrorResume { Mono.error(coverUnexpectedException(it)) }
+            .onErrorResume { Mono.error(coverUnexpectedException(it)) }
     }
 
     /**
@@ -63,7 +61,7 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
         @PathVariable projectName: String,
         auth: ServiceAuthentication
     ): Mono<Project> = projectService.updateProjectName(projectId, auth.user!!, projectName)
-            .onErrorResume { Mono.error(coverUnexpectedException(it)) }
+        .onErrorResume { Mono.error(coverUnexpectedException(it)) }
 
     /**
      * Deletes project with given id
@@ -73,7 +71,7 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
     fun deleteProject(@PathVariable projectId: UUID, auth: ServiceAuthentication): Mono<Void> =
         projectService.deleteProject(projectId, auth.user!!)
-                .onErrorResume { Mono.error(coverUnexpectedException(it)) }
-                .flatMap { Mono.empty() }
+            .onErrorResume { Mono.error(coverUnexpectedException(it)) }
+            .flatMap { Mono.empty() }
 
 }

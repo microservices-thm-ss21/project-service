@@ -50,31 +50,6 @@ class UserDbServiceTests(
         Mockito.verify(userRepository, times(1)).findAll()
     }
 
-    @Test
-    fun testShouldReturnUser() {
-        val user = UserId(UUID.randomUUID())
-
-        given(userRepository.findById(user.id!!)).willReturn(Mono.just(user))
-
-        val returnedProject: UserId? = userService.getUserById(user.id!!).block()
-        assertThat(returnedProject).isNotNull
-        assertThat(returnedProject).isEqualTo(user)
-
-        verify(userRepository, times(1)).findById(user.id!!)
-    }
-
-    @Test
-    fun testShouldCreateUser() {
-        val user = UserId(UUID.randomUUID())
-
-        given(userRepository.save(any())).willReturn(Mono.just(user))
-        val returnedProject: UserId? = userService.createProjectWithMembers(user).block()
-
-        assertThat(returnedProject).`as`("created user").isNotNull
-        assertThat(returnedProject).`as`("created user").isEqualTo(user)
-
-        verify(userRepository, times(1)).save(any())
-    }
 
     @Test
     fun shouldDeleteUser() {

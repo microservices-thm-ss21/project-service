@@ -18,6 +18,9 @@ import reactor.core.scheduler.Schedulers
 import reactor.kotlin.core.publisher.switchIfEmpty
 import java.util.*
 
+/**
+ * Implements the functionality to handle projects.
+ */
 @Component
 class ProjectDbService(
     @Autowired private val projectRepo: ProjectRepository,
@@ -28,7 +31,8 @@ class ProjectDbService(
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     /**
-     * returns all stores projects
+     * Returns all stores projects
+     * @return flux of projects
      */
     fun getAllProjects(): Flux<Project> {
         logger.debug("getAllProjects")
@@ -36,7 +40,8 @@ class ProjectDbService(
     }
 
     /**
-     * returns all stores projects that include the user as a member
+     * Returns all stores projects that include the user as a member
+     * @return flux of projects
      */
     fun getAllProjectsOfUser(userId: UUID): Flux<Project> {
         logger.debug("getAllProjectsOfUser $userId")
@@ -44,13 +49,23 @@ class ProjectDbService(
     }
 
     /**
-     * returns stored project
+     * Returns stored project with given id
+     * @param projectId
+     * @throws ServiceException when the project does not exist
+     * @return mono of a project
      */
-    fun getProjectById(id: UUID): Mono<Project> {
-        logger.debug("getProjectById $id")
-        return projectRepo.findById(id).switchIfEmpty { Mono.error(ServiceException(HttpStatus.NOT_FOUND)) }
+    fun getProjectById(projectId: UUID): Mono<Project> {
+        logger.debug("getProjectById $projectId")
+        return projectRepo.findById(projectId).switchIfEmpty { Mono.error(ServiceException(HttpStatus.NOT_FOUND)) }
     }
 
+    /**
+     * Creates a project and adds the requester as the first member with admin rights.
+     * Sends all necessary events.
+     * @param projectName
+     * @param requester
+     * @return mono of the new project
+     */
     @Transactional
     fun createProject(projectName: String, requester: User): Mono<Project> {
         logger.debug("createProject $projectName $requester")
@@ -69,10 +84,12 @@ class ProjectDbService(
     }
 
     /**
-     * Updates name of project
-     * @param projectId: project id
+     * Updates name of project. Checks requester permissions first and sends all necessary events.
+     * @param projectId
      * @param requester
-     * @param projectName
+     * @param projectName the new project name
+     * @throws ServiceException if permissions are not fulfilled or project not existing
+     * @return updated project
      */
     fun updateProjectName(projectId: UUID, requester: User, projectName: String): Mono<Project> {
         logger.debug("updateProjectName $projectId $requester $projectName")
@@ -104,9 +121,11 @@ class ProjectDbService(
     }
 
     /**
-     * Deletes project by id
-     * @param projectId: project id
-     * @param user
+     * Deletes project by id. Checks requester permissions first and sends all necessary events.
+     * @param projectId
+     * @param requester
+     * @throws ServiceException if project does not exist
+     * @return id of the deleted project
      */
     fun deleteProject(projectId: UUID, requester: User): Mono<UUID> {
         logger.debug("deleteProject $projectId $requester")

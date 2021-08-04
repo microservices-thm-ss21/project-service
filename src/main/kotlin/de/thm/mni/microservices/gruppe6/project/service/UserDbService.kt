@@ -11,35 +11,30 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.*
 
+/**
+ * Implements the functionality used to process users
+ */
 @Component
 class UserDbService(@Autowired private val userRepo: UserRepository) {
 
     /**
-     * returns all users
+     * Returns all userIds
+     * @return flux of userIds
      */
     fun getAllUsers(): Flux<UserId> = userRepo.findAll()
 
     /**
-     * returns stored user
-     * @param id: user id
+     * Deletes a userId
+     * @param userId: user id
      */
-    fun getUserById(id: UUID): Mono<UserId> = userRepo.findById(id)
-
-    /**
-     * create new user
-     */
-    fun createProjectWithMembers(user: UserId): Mono<UserId> {
-        return userRepo.save(user)
+    fun deleteUser(userId: UUID): Mono<Void> {
+        return userRepo.deleteById(userId)
     }
 
     /**
-     * Deletes user by id
-     * @param id: user id
+     * Handles all the incoming UserDataEvents
+     * @param userDataEvent
      */
-    fun deleteUser(id: UUID): Mono<Void> {
-        return userRepo.deleteById(id)
-    }
-
     fun receiveUpdate(userDataEvent: UserDataEvent) {
         when (userDataEvent.code) {
             CREATED -> userRepo.saveUser(userDataEvent.id).subscribe()
