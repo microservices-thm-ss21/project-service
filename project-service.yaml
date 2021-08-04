@@ -4,7 +4,7 @@ info:
   description: API Specification for Project-Service
   version: 1.0.0
 servers:
-  - url: 'http://localhost:8082/api/projects'
+  - url: 'http://localhost:8069/api/projects'
 tags:
   - name: Projects
     description: Projects saved within the project service
