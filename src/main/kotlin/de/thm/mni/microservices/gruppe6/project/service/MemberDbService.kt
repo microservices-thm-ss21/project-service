@@ -140,10 +140,10 @@ class MemberDbService(
             .flatMap {
                 isMember(projectId, userId).filter {
                     it
-                }.flatMap {
-                    memberRepo.deleteByUserId(userId).thenReturn(userId)
                 }.switchIfEmpty {
                     Mono.error(ServiceException(HttpStatus.NOT_FOUND, "Member does not exist"))
+                }.flatMap {
+                    memberRepo.deleteByUserIdAndProjectId(userId, projectId).thenReturn(userId)
                 }
             }
             .publishOn(Schedulers.boundedElastic())

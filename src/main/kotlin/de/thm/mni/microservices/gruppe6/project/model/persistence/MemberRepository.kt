@@ -20,5 +20,7 @@ interface MemberRepository : ReactiveCrudRepository<Member, UUID> {
 
     fun deleteByUserId(userId: UUID): Mono<Void>
 
+    fun deleteByUserIdAndProjectId(userId: UUID, projectId: UUID): Mono<Void>
+
     fun existsByUserIdAndProjectId(userId: UUID, projectId: UUID): Mono<Boolean>
 }
