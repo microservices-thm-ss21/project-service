@@ -13,14 +13,12 @@ import org.mockito.Mockito.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.test.web.reactive.server.WebTestClient
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
@@ -30,10 +28,23 @@ import java.util.*
 @WithMockUser
 class MemberControllerTests {
 
-    @Autowired private lateinit var webTestClient: WebTestClient
-    @MockBean private lateinit var memberService: MemberDbService
+    @Autowired
+    private lateinit var webTestClient: WebTestClient
+    @MockBean
+    private lateinit var memberService: MemberDbService
 
-    private val mockedUser = User(UUID.fromString("a443ffd0-f7a8-44f6-8ad3-87acd1e91042"), "Peter_Zwegat", "password", "Peter", "Zwegat", "peter.zwegat@mni.thm.de", LocalDate.now(), LocalDateTime.now(), ProjectRole.ADMIN.name, null)
+    private val mockedUser = User(
+        UUID.fromString("a443ffd0-f7a8-44f6-8ad3-87acd1e91042"),
+        "Peter_Zwegat",
+        "password",
+        "Peter",
+        "Zwegat",
+        "peter.zwegat@mni.thm.de",
+        LocalDate.now(),
+        LocalDateTime.now(),
+        ProjectRole.ADMIN.name,
+        null
+    )
 
     @BeforeEach
     fun setUp() {
@@ -56,12 +67,12 @@ class MemberControllerTests {
         given(memberService.getMembers(projectId)).willReturn(Flux.fromIterable(members))
 
         webTestClient
-                .get()
-                .uri(getMembersURI(projectId))
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk
-                .expectBody().jsonPath("$", members)
+            .get()
+            .uri(getMembersURI(projectId))
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody().jsonPath("$", members)
 
         verify(memberService, times(1)).getMembers(projectId)
     }
@@ -69,36 +80,21 @@ class MemberControllerTests {
     @Test
     fun testShouldGetMembers() {
         val projectId = UUID.randomUUID()
-        val members = listOf(createTestMember(projectId, "admin"), createTestMember(projectId, "normal"), createTestMember(projectId, "normal"))
+        val members = listOf(
+            createTestMember(projectId, "admin"),
+            createTestMember(projectId, "normal"),
+            createTestMember(projectId, "normal")
+        )
         given(memberService.getMembers(projectId)).willReturn(Flux.fromIterable(members))
 
         webTestClient
-                .get()
-                .uri(getMembersURI(projectId))
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk
-                .expectBody().jsonPath("$", members)
+            .get()
+            .uri(getMembersURI(projectId))
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody().jsonPath("$", members)
 
         verify(memberService, times(1)).getMembers(projectId)
     }
-
-    @Test
-    fun testShouldDeleteMember() {
-        val projectId = UUID.randomUUID()
-        val requester = mockedUser
-        val userId = UUID.randomUUID()
-        given(memberService.deleteMember(projectId, requester, userId)).willReturn(Mono.empty())
-
-        webTestClient
-                .delete()
-                .uri("${getMembersURI(projectId)}/user/$userId")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isNoContent
-                .expectBody().isEmpty
-
-        verify(memberService, times(1)).deleteMember(projectId, requester, userId)
-    }
-
 }

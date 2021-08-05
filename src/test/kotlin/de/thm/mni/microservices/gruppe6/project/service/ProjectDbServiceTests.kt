@@ -1,17 +1,16 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
-import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Project
-import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
 import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Member
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Project
 import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectRole
+import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatExceptionOfType
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.BDDMockito.*
-import org.mockito.Mock;
+import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.junit.jupiter.MockitoExtension
 import org.springframework.http.HttpStatus
@@ -24,9 +23,9 @@ import java.util.*
 
 @ExtendWith(MockitoExtension::class)
 class ProjectDbServiceTests(
-        @Mock private val projectRepository: ProjectRepository,
-        @Mock private val memberService: MemberDbService,
-        @Mock private val sender: JmsTemplate
+    @Mock private val projectRepository: ProjectRepository,
+    @Mock private val memberService: MemberDbService,
+    @Mock private val sender: JmsTemplate
 ) {
 
     private val projectService = ProjectDbService(projectRepository, memberService, sender)
@@ -36,8 +35,10 @@ class ProjectDbServiceTests(
     }
 
     private fun createTestUser(): User {
-        return User(UUID.randomUUID(), "username", "Password", "name", "lastName", "email",
-                LocalDate.now(), LocalDateTime.now(), "ADMIN", LocalDateTime.now())
+        return User(
+            UUID.randomUUID(), "username", "Password", "name", "lastName", "email",
+            LocalDate.now(), LocalDateTime.now(), "ADMIN", LocalDateTime.now()
+        )
     }
 
     @Test
@@ -64,7 +65,8 @@ class ProjectDbServiceTests(
 
         assertThat(projects).`as`("list of projects").isNotNull
         assertThat(projects).`as`("list of projects").hasSize(projectList.size)
-        projects!!.withIndex().forEach { assertThat(it.value).`as`("project $it.index").isEqualTo(projectList[it.index]) }
+        projects!!.withIndex()
+            .forEach { assertThat(it.value).`as`("project $it.index").isEqualTo(projectList[it.index]) }
 
         Mockito.verify(projectRepository, times(1)).findAll()
     }
@@ -119,12 +121,17 @@ class ProjectDbServiceTests(
         val project = createTestProject("project to update")
         val user = createTestUser()
 
-        given(memberService.checkSoftPermissions(project.id!!, user)).willReturn(Mono.error(ServiceException(HttpStatus.FORBIDDEN)))
+        given(
+            memberService.checkSoftPermissions(
+                project.id!!,
+                user
+            )
+        ).willReturn(Mono.error(ServiceException(HttpStatus.FORBIDDEN)))
         given(projectRepository.findById(project.id!!)).willReturn(Mono.empty())
         given(projectRepository.save(project)).willReturn(Mono.error(Throwable()))
         try {
             projectService.updateProjectName(project.id!!, user, project.name).block()
-        } catch(e: Throwable) {
+        } catch (e: Throwable) {
             assertThat(e is ServiceException)
             assertThat((e as ServiceException).status.value() == HttpStatus.FORBIDDEN.value())
         }
@@ -145,7 +152,7 @@ class ProjectDbServiceTests(
 
         try {
             projectService.updateProjectName(project.id!!, user, project.name).block()
-        } catch(e: Throwable) {
+        } catch (e: Throwable) {
             assertThat(e is ServiceException)
             assertThat((e as ServiceException).status.value() == HttpStatus.NOT_FOUND.value())
         }

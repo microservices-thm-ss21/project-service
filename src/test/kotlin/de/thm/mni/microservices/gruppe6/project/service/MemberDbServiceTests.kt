@@ -1,6 +1,8 @@
 package de.thm.mni.microservices.gruppe6.project.service
 
-import de.thm.mni.microservices.gruppe6.lib.classes.projectService.*
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Member
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Project
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectRole
 import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.persistence.MemberRepository
@@ -18,15 +20,14 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.LocalDate
 import java.time.LocalDateTime
-
 import java.util.*
 
 @ExtendWith(MockitoExtension::class)
 class MemberDbServiceTests(
-        @Mock private val userRepo: UserRepository,
-        @Mock private val projectRepo: ProjectRepository,
-        @Mock private val memberRepo: MemberRepository,
-        @Mock private val sender: JmsTemplate
+    @Mock private val userRepo: UserRepository,
+    @Mock private val projectRepo: ProjectRepository,
+    @Mock private val memberRepo: MemberRepository,
+    @Mock private val sender: JmsTemplate
 ) {
     private val memberService = MemberDbService(userRepo, projectRepo, memberRepo, sender)
 
@@ -35,8 +36,10 @@ class MemberDbServiceTests(
     }
 
     private fun createTestUser(): User {
-        return User(UUID.randomUUID(), "username", "Password", "name", "lastName", "email",
-                LocalDate.now(), LocalDateTime.now(), "ADMIN", LocalDateTime.now())
+        return User(
+            UUID.randomUUID(), "username", "Password", "name", "lastName", "email",
+            LocalDate.now(), LocalDateTime.now(), "ADMIN", LocalDateTime.now()
+        )
     }
 
     @Test
@@ -81,7 +84,8 @@ class MemberDbServiceTests(
         doReturn(Mono.just(true)).`when`(service).isMember(projectId, member.userId)
         given(memberRepo.findMemberOfProject(projectId, member.userId)).willReturn(Mono.just(member))
 
-        val returnedMember = service.addMember(projectId, user, member.userId, ProjectRole.valueOf(member.projectRole)).block()
+        val returnedMember =
+            service.addMember(projectId, user, member.userId, ProjectRole.valueOf(member.projectRole)).block()
 
         assertThat(returnedMember).`as`("list of created members of project with id $projectId").isNotNull
         assertThat(returnedMember).`as`("returnedMember").isEqualTo(member)
@@ -95,9 +99,11 @@ class MemberDbServiceTests(
         val member = createTestMember(projectId, ProjectRole.ADMIN.name, UUID.randomUUID())
         val service = spy(memberService)
         doReturn(Mono.just(false)).`when`(service).isMember(projectId, member.userId)
-        doReturn(Mono.just(member)).`when`(service).addNewMember(projectId, user, member.userId, ProjectRole.valueOf(member.projectRole))
+        doReturn(Mono.just(member)).`when`(service)
+            .addNewMember(projectId, user, member.userId, ProjectRole.valueOf(member.projectRole))
 
-        val returnedMember = service.addMember(projectId, user, member.userId, ProjectRole.valueOf(member.projectRole)).block()
+        val returnedMember =
+            service.addMember(projectId, user, member.userId, ProjectRole.valueOf(member.projectRole)).block()
 
         assertThat(returnedMember).`as`("list of created members of project with id $projectId").isNotNull
         assertThat(returnedMember).`as`("returnedMember").isEqualTo(member)
@@ -116,7 +122,7 @@ class MemberDbServiceTests(
         given(memberRepo.findMemberOfProject(projectId, member.userId)).willReturn(Mono.just(memberOld))
 
         var error: Throwable? = null
-        try{
+        try {
             service.addMember(projectId, user, member.userId, ProjectRole.valueOf(member.projectRole)).block()
         } catch (e: Throwable) {
             error = e

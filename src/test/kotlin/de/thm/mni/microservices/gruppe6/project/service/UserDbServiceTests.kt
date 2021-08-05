@@ -2,12 +2,12 @@ package de.thm.mni.microservices.gruppe6.project.service
 
 import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Project
 import de.thm.mni.microservices.gruppe6.lib.classes.userService.UserId
-import de.thm.mni.microservices.gruppe6.project.model.persistence.*
+import de.thm.mni.microservices.gruppe6.project.model.persistence.UserRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.BDDMockito.*
-import org.mockito.Mock;
+import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.junit.jupiter.MockitoExtension
 import reactor.core.publisher.Flux
@@ -16,7 +16,7 @@ import java.util.*
 
 @ExtendWith(MockitoExtension::class)
 class UserDbServiceTests(
-        @Mock private val userRepository: UserRepository
+    @Mock private val userRepository: UserRepository
 ) {
 
     private val userService = UserDbService(userRepository)
@@ -45,7 +45,8 @@ class UserDbServiceTests(
 
         assertThat(projects).`as`("list of users").isNotNull
         assertThat(projects).`as`("list of users").hasSize(userList.size)
-        projects!!.withIndex().forEach { assertThat(it.value).`as`("project " + it.index).isEqualTo(userList[it.index]) }
+        projects!!.withIndex()
+            .forEach { assertThat(it.value).`as`("project " + it.index).isEqualTo(userList[it.index]) }
 
         Mockito.verify(userRepository, times(1)).findAll()
     }
