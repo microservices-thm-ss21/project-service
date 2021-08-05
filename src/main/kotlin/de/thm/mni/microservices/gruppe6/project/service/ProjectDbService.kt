@@ -6,6 +6,7 @@ import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
 import de.thm.mni.microservices.gruppe6.lib.event.*
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
+import de.thm.mni.microservices.gruppe6.project.requests.Requester
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -25,7 +26,8 @@ import java.util.*
 class ProjectDbService(
     @Autowired private val projectRepo: ProjectRepository,
     @Autowired private val memberDbService: MemberDbService,
-    @Autowired private val sender: JmsTemplate
+    @Autowired private val sender: JmsTemplate,
+    @Autowired private val httpRequester: Requester
 ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -133,10 +135,20 @@ class ProjectDbService(
             .flatMap {
                 projectRepo.existsById(projectId)
                     .filter { it }
+                    .switchIfEmpty { Mono.error(ServiceException(HttpStatus.NOT_FOUND, "Project does not exist")) }
+                    /*.map {
+                        httpRequester.forwardDeleteRequestMono(
+                            "http://project-service:8082",
+                            "api/issue/project/${projectId}",
+                            Boolean::class.java
+                        )
+                    }
+                    .filter { it }
+                    .switchIfEmpty{ Mono.error(ServiceException(HttpStatus.INTERNAL_SERVER_ERROR, "Issues of Project could not be deleted")) }
+                     */
                     .flatMap {
                         projectRepo.deleteById(projectId).thenReturn(projectId)
                     }
-                    .switchIfEmpty { Mono.error(ServiceException(HttpStatus.NOT_FOUND, "Project does not exist")) }
             }
             .publishOn(Schedulers.boundedElastic()).map {
                 sender.convertAndSend(
