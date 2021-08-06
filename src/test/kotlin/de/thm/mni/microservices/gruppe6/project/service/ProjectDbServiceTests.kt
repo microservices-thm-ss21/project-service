@@ -6,7 +6,6 @@ import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectRole
 import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
-import de.thm.mni.microservices.gruppe6.project.requests.Requester
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -26,11 +25,10 @@ import java.util.*
 class ProjectDbServiceTests(
     @Mock private val projectRepository: ProjectRepository,
     @Mock private val memberService: MemberDbService,
-    @Mock private val sender: JmsTemplate,
-    @Mock private val requester: Requester
+    @Mock private val sender: JmsTemplate
 ) {
 
-    private val projectService = ProjectDbService(projectRepository, memberService, sender, requester)
+    private val projectService = ProjectDbService(projectRepository, memberService, sender)
 
     private fun createTestProject(name: String): Project {
         return Project(UUID.randomUUID(), name, UUID.randomUUID(), LocalDateTime.now())
