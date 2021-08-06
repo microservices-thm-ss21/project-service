@@ -229,9 +229,12 @@ class MemberDbService(
                             it.t1.creatorId == user.id!! || it.t2.projectRole == ProjectRole.ADMIN.name || user.globalRole == GlobalRole.ADMIN.name
                         }.map { projectId }
                 } else {
-                    Mono.just(projectId).filter {
-                        user.globalRole == GlobalRole.ADMIN.name
-                    }
+                    projectRepo.findById(projectId)
+                            .filter {
+                                it.creatorId == user.id!! || user.globalRole == GlobalRole.ADMIN.name
+                            }.map {
+                                projectId
+                            }
                 }
             }.switchIfEmpty {
                 Mono.error(ServiceException(HttpStatus.FORBIDDEN, "No permissions"))
