@@ -92,7 +92,8 @@ class ProjectDbServiceTests(
         val member = Member(UUID.randomUUID(), project.id!!, user.id!!, "ADMIN")
 
         given(projectRepository.save(any())).willReturn(Mono.just(project))
-        given(memberService.addMember(project.id!!, user, user.id!!, ProjectRole.ADMIN)).willReturn(Mono.just(member))
+        given(memberService.addNewMember(project.id!!, user, user.id!!, ProjectRole.ADMIN)).willReturn(Mono.just(member))
+        given(memberService.publishEventChangedMemberRole(project.id!!, member, null, ProjectRole.ADMIN.name)).willReturn(Mono.just(member))
 
         val returnedProject = projectService.createProject(project.name, user).block()
 
