@@ -74,14 +74,15 @@ class ProjectDbService(
                 memberDbService.addNewMember(it.id!!, requester, it.creatorId!!, ProjectRole.ADMIN)
                     .zipWith(Mono.just(it))
             }
-            .publishOn(Schedulers.boundedElastic()).map {
+            .publishOn(Schedulers.boundedElastic())
+            .map {
                 sender.convertAndSend(
                     EventTopic.DataEvents.topic,
                     ProjectDataEvent(DataEventCode.CREATED, it.t2.id!!)
                 )
                 it
             }.flatMap {
-                memberDbService.publishEventNewMemberCreated(it.t2.id!!, requester.id!!, it.t1)
+                memberDbService.publishEventChangedMemberRole(it.t2.id!!, it.t1, null, ProjectRole.ADMIN.name)
                 Mono.just(it.t2)
             }
     }

@@ -91,16 +91,14 @@ class MemberDbService(
                     }
                 } else {
                     addNewMember(projectId, requester, userId, role)
-                        .flatMap {
-                            publishEventNewMemberCreated(projectId, userId, it)
-                        }
+                        .publishEventChangedMemberRole(projectId,null, role.name)
                 }
             }
     }
 
     /**
      * Create a new member and return it. Checks if the requester has the permission to do so.
-     * Sends all necessary events.
+     * Does not send any notifications
      * @param projectId
      * @param requester
      * @param userId of user that should be added
@@ -114,19 +112,38 @@ class MemberDbService(
             .flatMap {
                 memberRepo.save(Member(null, projectId, userId, role.name))
             }
+            .publishOn(Schedulers.boundedElastic())
     }
 
-    fun publishEventNewMemberCreated(projectId: UUID, userId: UUID, member: Member): Mono<Member> {
-        return Mono.just(member).publishOn(Schedulers.boundedElastic())
+    /**
+     * Sends the notifications of the creation of a new member
+     * @param projectId
+     * @param oldRole Old Role in the Project or null
+     * @param newRole New role in the Project or null
+     */
+    fun Mono<Member>.publishEventChangedMemberRole(projectId: UUID, oldRole: String?, newRole: String?): Mono<Member>{
+        return this
+            .flatMap { publishEventChangedMemberRole(projectId, it, oldRole, newRole) }
+    }
+
+    /**
+     * Sends the notifications of the creation of a new member
+     * @param projectId
+     * @param member New Member Object
+     * @param oldRole Old role in the project or null
+     * @param newRole new role in the project or null
+     */
+    fun publishEventChangedMemberRole(projectId: UUID, member: Member, oldRole: String?, newRole: String?): Mono<Member> {
+        return Mono.just(member)
                 .map {
                     sender.convertAndSend(
                             EventTopic.DomainEvents_ProjectService.topic,
                             DomainEventChangedStringUUID(
                                     DomainEventCode.PROJECT_CHANGED_MEMBER,
                                     projectId,
-                                    userId,
-                                    null,
-                                    it.projectRole
+                                    member.userId,
+                                    oldRole,
+                                    newRole
                             )
                     )
                     it
@@ -187,18 +204,8 @@ class MemberDbService(
                     }
             }
             .publishOn(Schedulers.boundedElastic())
-            .map {
-                sender.convertAndSend(
-                    EventTopic.DomainEvents_ProjectService.topic,
-                    DomainEventChangedStringUUID(
-                        DomainEventCode.PROJECT_CHANGED_MEMBER,
-                        projectId,
-                        userId,
-                        it.first.projectRole,
-                        it.second.projectRole
-                    )
-                )
-                it.second
+            .flatMap {
+                publishEventChangedMemberRole(projectId, it.second, it.first.projectRole, it.second.projectRole)
             }
     }
 
