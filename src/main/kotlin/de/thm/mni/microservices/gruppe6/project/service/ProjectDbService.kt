@@ -71,15 +71,18 @@ class ProjectDbService(
         logger.debug("createProject $projectName $requester")
         return projectRepo.save(Project(projectName, requester.id!!))
             .flatMap {
-                memberDbService.addMember(it.id!!, requester, it.creatorId!!, ProjectRole.ADMIN)
-                    .then(Mono.just(it))
+                memberDbService.addNewMember(it.id!!, requester, it.creatorId!!, ProjectRole.ADMIN)
+                    .zipWith(Mono.just(it))
             }
             .publishOn(Schedulers.boundedElastic()).map {
                 sender.convertAndSend(
                     EventTopic.DataEvents.topic,
-                    ProjectDataEvent(DataEventCode.CREATED, it.id!!)
+                    ProjectDataEvent(DataEventCode.CREATED, it.t2.id!!)
                 )
                 it
+            }.flatMap {
+                memberDbService.publishEventNewMemberCreated(it.t2.id!!, requester.id!!, it.t1)
+                Mono.just(it.t2)
             }
     }
 

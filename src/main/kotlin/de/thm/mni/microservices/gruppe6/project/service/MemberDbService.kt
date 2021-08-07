@@ -91,6 +91,9 @@ class MemberDbService(
                     }
                 } else {
                     addNewMember(projectId, requester, userId, role)
+                        .flatMap {
+                            publishEventNewMemberCreated(projectId, userId, it)
+                        }
                 }
             }
     }
@@ -110,20 +113,24 @@ class MemberDbService(
             .switchIfEmpty(Mono.error(ServiceException(HttpStatus.NOT_FOUND, "User not existing")))
             .flatMap {
                 memberRepo.save(Member(null, projectId, userId, role.name))
-            }.publishOn(Schedulers.boundedElastic())
-            .map {
-                sender.convertAndSend(
-                    EventTopic.DomainEvents_ProjectService.topic,
-                    DomainEventChangedStringUUID(
-                        DomainEventCode.PROJECT_CHANGED_MEMBER,
-                        projectId,
-                        userId,
-                        null,
-                        it.projectRole
-                    )
-                )
-                it
             }
+    }
+
+    fun publishEventNewMemberCreated(projectId: UUID, userId: UUID, member: Member): Mono<Member> {
+        return Mono.just(member).publishOn(Schedulers.boundedElastic())
+                .map {
+                    sender.convertAndSend(
+                            EventTopic.DomainEvents_ProjectService.topic,
+                            DomainEventChangedStringUUID(
+                                    DomainEventCode.PROJECT_CHANGED_MEMBER,
+                                    projectId,
+                                    userId,
+                                    null,
+                                    it.projectRole
+                            )
+                    )
+                    it
+                }
     }
 
     /**
