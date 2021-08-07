@@ -2,8 +2,10 @@ package de.thm.mni.microservices.gruppe6.project.event
 
 
 import de.thm.mni.microservices.gruppe6.lib.event.DataEvent
+import de.thm.mni.microservices.gruppe6.lib.event.DeletedIssuesSagaEvent
 import de.thm.mni.microservices.gruppe6.lib.event.DomainEvent
 import de.thm.mni.microservices.gruppe6.lib.event.EventTopic
+import de.thm.mni.microservices.gruppe6.project.saga.service.ProjectDeletedSagaService
 import de.thm.mni.microservices.gruppe6.project.service.DataEventService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -19,7 +21,9 @@ import javax.jms.ObjectMessage
  * @param dataEventService A service to transfer the events into the project specific context
  */
 @Component
-class Receiver(private val dataEventService: DataEventService) {
+class Receiver(
+    private val dataEventService: DataEventService,
+    private val projectDeletedSagaService: ProjectDeletedSagaService) {
 
     /**
      * Logger to track errors within receiving message and debugging not implemented message types
@@ -55,6 +59,49 @@ class Receiver(private val dataEventService: DataEventService) {
                         payload.code
                     )
                 }
+                is DeletedIssuesSagaEvent -> {
+                    logger.debug("Received DeletedIssuesSagaEvent reference {}/{} and id {}", payload.referenceType, payload.referenceValue, payload.success)
+                    projectDeletedSagaService.receiveSagaEvent(payload)
+                }
+                else -> {
+                    logger.error(
+                        "Received unknown ObjectMessage with payload type {} with id {}",
+                        payload.javaClass,
+                        message.jmsMessageID
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            logger.error("Receiver-Error", e)
+        }
+    }
+
+    /**
+     * Listen to all topics specified via the JMSListener destinations, distributes the messages to the corresponding services
+     * Special listener for SagaEvents.
+     * @param message an Object message, containing a SagaEvent within its `object`-payload.
+     */
+    @JmsListeners(
+        JmsListener(destination = EventTopic.SagaEvents.topic, containerFactory = "jmsSagaEventListenerContainerFactory")
+    )
+    fun receiveSaga(message: Message) {
+        try {
+            if (message !is ObjectMessage) {
+                logger.error("Received unknown message type {} with id {}", message.jmsType, message.jmsMessageID)
+                return
+            }
+            when (val payload = message.`object`) {
+                is DeletedIssuesSagaEvent -> {
+                    logger.debug(
+                        "Received DeletedIssuesSagaEvent reference {}/{} and id {}",
+                        payload.referenceType,
+                        payload.referenceValue,
+                        payload.success
+                    )
+                    projectDeletedSagaService.receiveSagaEvent(payload)
+                }
+            }
+            when (val payload = message.`object`) {
                 else -> {
                     logger.error(
                         "Received unknown ObjectMessage with payload type {} with id {}",

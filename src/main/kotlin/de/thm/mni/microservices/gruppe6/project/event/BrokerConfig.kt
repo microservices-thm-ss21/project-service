@@ -35,6 +35,17 @@ class BrokerConfig {
         return factory
     }
 
+    @Bean
+    fun jmsSagaEventListenerContainerFactory(activeMQConnectionFactory: ActiveMQConnectionFactory): DefaultJmsListenerContainerFactory {
+        val factory = DefaultJmsListenerContainerFactory()
+        factory.setPubSubDomain(true)
+        factory.setMessageConverter(jacksonJmsMessageConverter())
+        factory.setSubscriptionDurable(true)
+        factory.setConnectionFactory(activeMQConnectionFactory)
+        factory.setClientId("project-service-saga")
+        return factory
+    }
+
     /**
      * Used as sender, `convertAndSend(EventTopic.*, Event)` to send data and define a topic, while having a backup topic if undeclared.
      * @param activeMQConnectionFactory Required to establish a connection when sending data
