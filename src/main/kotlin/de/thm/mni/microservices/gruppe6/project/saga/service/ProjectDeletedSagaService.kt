@@ -98,8 +98,12 @@ class ProjectDeletedSagaService(
         }
     }
 
+    /**
+     * Rollback the given ProjectDeletedSaga and send rollback message via ActiveMQ.
+     * @param saga the ProjectDeletedSaga
+     */
     fun rollbackSagaTransaction(saga: ProjectDeletedSaga) {
-        val project = saga.getProjectData()
+        val project = saga.project
         val members = saga.members
         logger.debug("Restore project {}/{}", project.name, project.id)
         this.projectRepository
@@ -119,14 +123,17 @@ class ProjectDeletedSagaService(
             }.subscribe()
         projectDeletedSagas.remove(project.id!!)
     }
-
+    /**
+     * Complete the given ProjectDeletedSaga and send completion message via ActiveMQ.
+     * @param saga the ProjectDeletedSaga
+     */
     fun sagaComplete(saga: ProjectDeletedSaga) {
-        logger.debug("Completed delete saga for project {}/{}", saga.getProjectData().name, saga.getProjectData().id)
-        projectDeletedSagas.remove(saga.getProjectData().id!!)
+        logger.debug("Completed delete saga for project {}/{}", saga.project.name, saga.project.id)
+        projectDeletedSagas.remove(saga.project.id!!)
         jmsTemplate.convertAndSend(
             EventTopic.SagaEvents.topic,
             ProjectSagaEvent(
-                referenceValue = saga.getProjectData().id!!,
+                referenceValue = saga.project.id!!,
                 projectSagaStatus = ProjectSagaStatus.COMPLETE,
                 success = false)
         )
