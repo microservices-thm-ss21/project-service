@@ -1,4 +1,26 @@
 = Project Service
 
-Please refer to the [README](https://git.thm.de/microservicesss21/orga/-/blob/master/README.md) of the Orga-Repository for more information.
+Service responsible for managing projects and associated users.
 
+== Tech-Stack
+The project service is based on the Spring Framework with Webflux and Netty as its HTTP-server stack and ActiveMQ connections as message broker. The project service is connected to dedicated PostgreSQL database, where data is persisted.
+
+== Database / PostgreSQL
+The database holds all information of projects, its members - users associated with a project, and existing user ids for data integrity.
+
+== Message-Broker / ActiveMQ
+The project service is listening to two ActiveMQ topics:
+
+=== microservices.dataEvents
+This service is interested in creation and deletion events for users within the system to update its local table with user ids.
+All other events are ignored.
+
+=== microservices.sagaEvents
+This service is interested in ProjectDeleteSagaEvents containing results of other services involved in saga transactions orchestrated by this service.
+
+== Saga
+This service is the choreographer for a project deletion saga. Whenever it is requested to delete a project, it saves the data to be deleted and sends an event via "microservices.sagaEvents" - Topic. It subsequently awaits messages marking further steps ("chapters") within the saga.
+
+== Further Reading
+Please refer to the https://git.thm.de/microservicesss21/orga/-/blob/master/README.md[README] of the Orga-Repository for more information.
+This service uses the https://git.thm.de/microservicesss21/service-lib/-/blob/master/README.md[service-lib] as a dependency.
