@@ -8,6 +8,9 @@ The project service is based on the Spring Framework with Webflux and Netty as i
 == Database / PostgreSQL
 The database holds all information of projects, its members - users associated with a project, and existing user ids for data integrity.
 
+== HTTP API
+The API is documented as OpenAPI Specification in https://git.thm.de/microservicesss21/project-service/-/blob/master/project-service.yaml[project-service.yaml]
+
 == Message-Broker / ActiveMQ
 The project service is listening to two ActiveMQ topics:
 
