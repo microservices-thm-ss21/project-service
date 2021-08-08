@@ -43,7 +43,6 @@ class MemberControllerTests {
         LocalDate.now(),
         LocalDateTime.now(),
         ProjectRole.ADMIN.name,
-        null
     )
 
     @BeforeEach

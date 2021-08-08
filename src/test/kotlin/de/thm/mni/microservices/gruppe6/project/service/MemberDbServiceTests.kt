@@ -38,7 +38,7 @@ class MemberDbServiceTests(
     private fun createTestUser(): User {
         return User(
             UUID.randomUUID(), "username", "Password", "name", "lastName", "email",
-            LocalDate.now(), LocalDateTime.now(), "ADMIN", LocalDateTime.now()
+            LocalDate.now(), LocalDateTime.now(), "ADMIN"
         )
     }
 
