@@ -12,6 +12,8 @@ The database holds all information of projects, its members - users associated w
 The API is documented as OpenAPI Specification in https://git.thm.de/microservicesss21/project-service/-/blob/master/project-service.yaml[project-service.yaml]
 
 == Message-Broker / ActiveMQ
+The service sends events when...
+
 The project service is listening to two ActiveMQ topics:
 
 === microservices.dataEvents
