@@ -19,7 +19,7 @@ The project service is based on the Spring Framework with Webflux and Netty as i
 The database holds all information of projects, its members - users associated with a project, and existing user ids for data integrity.
 
 == HTTP API
-The API is documented as OpenAPI Specification in https://git.thm.de/microservicesss21/project-service/-/blob/master/project-service.yaml[project-service.yaml]
+The API is documented as OpenAPI Specification in https://git.thm.de/microservicesss21/orga/-/tree/master/doc/apis[project-service.yaml]
 
 To test the API please use the https://git.thm.de/microservicesss21/orga/-/blob/master/doc/Micro-Services.project_service.postman_collection.json[Postman collection].
 
