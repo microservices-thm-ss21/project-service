@@ -68,7 +68,7 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
      * @param projectId: project id
      */
     @DeleteMapping("{projectId}")
-    @ResponseStatus(value = HttpStatus.NO_CONTENT)
+    @ResponseStatus(value = HttpStatus.ACCEPTED)
     fun deleteProject(@PathVariable projectId: UUID, auth: ServiceAuthentication): Mono<Void> =
         projectService.deleteProject(projectId, auth.user!!)
             .onErrorResume { Mono.error(coverUnexpectedException(it)) }
