@@ -123,7 +123,7 @@ class ProjectDbService(
     }
 
     /**
-     * Deletes project by id. Checks requester permissions first and sends all necessary events.
+     * Deletes project by id. Checks requester permissions first and initates a project deletion Saga.
      * @param projectId
      * @param requester
      * @throws ServiceException if project does not exist
@@ -137,6 +137,7 @@ class ProjectDbService(
             }.switchIfEmpty {
                 Mono.error(ServiceException(HttpStatus.NOT_FOUND, "Project does not exist"))
             }.doOnNext {
+                // START SAGA
                 projectDeletedSagaService.startSaga(projectId)
             }.thenReturn(projectId)
     }

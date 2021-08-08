@@ -11,6 +11,14 @@ import reactor.core.scheduler.Schedulers
 import java.util.*
 import kotlin.collections.HashMap
 
+/**
+ * Service responsible for initiating a project deletion saga,
+ * subsequently listing for associated events and initiating rollbacks or completing the saga.
+ * @param projectRepository the project repository.
+ * @param memberRepository the member repository.
+ * @param jmsTemplate the JMSTemplate to send events.
+ * @see ProjectDeletedSaga
+ */
 @Service
 class ProjectDeletedSagaService(
     private val projectRepository: ProjectRepository,
@@ -20,8 +28,20 @@ class ProjectDeletedSagaService(
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
+    // Hash Map associating ProjectDeletedSagas with project ids.
     private val projectDeletedSagas: HashMap<UUID, ProjectDeletedSaga> = HashMap()
 
+    /**
+     * Starts a project deletion saga for the given projects id.
+     * This function:
+     *  1. Finds the project within the database.
+     *  2. Creates the ProjectDeletedSaga within the map.
+     *  3. Reads all members of the project from the database.
+     *  4. Inserts the members into the ProjectDeletedSaga.
+     *  5. Deletes the project and members (by cascade) from the database.
+     *  6. Sends a ProjectSagaEvent with status BEGIN via ActiveMQ.
+     * @param projectId the project id to be deleted.
+     */
     fun startSaga(projectId: UUID) {
         projectRepository
             .findById(projectId)
@@ -46,6 +66,10 @@ class ProjectDeletedSagaService(
             .subscribe()
     }
 
+    /**
+     * Takes a received ProjectSagaEvent and executes relevant functions.
+     * @param sagaEvent The ProjectSagaEvent.
+     */
     fun receiveSagaEvent(sagaEvent: ProjectSagaEvent) {
         if (sagaEvent.referenceType != SagaReferenceType.PROJECT || !projectDeletedSagas.containsKey(sagaEvent.referenceValue)) {
             logger.error("Received event does not reference any continued saga!")
@@ -57,6 +81,11 @@ class ProjectDeletedSagaService(
         }
     }
 
+    /**
+     * Function called to record that the issue-service has reported issue deletion.
+     * If issue deletion failed: rollback saga transactions.
+     * If the saga is completed ->
+     */
     private fun issuesDeleted(sagaEvent: ProjectSagaEvent) {
         val saga = projectDeletedSagas[sagaEvent.referenceValue]!!
         if (!sagaEvent.success) {
@@ -65,8 +94,7 @@ class ProjectDeletedSagaService(
         }
         saga.issuesDeleted()
         if (saga.isComplete()) {
-            logger.debug("Completed delete saga for project {}", sagaEvent.referenceValue)
-            projectDeletedSagas.remove(sagaEvent.referenceValue)
+            sagaComplete(saga)
         }
     }
 
@@ -89,7 +117,19 @@ class ProjectDeletedSagaService(
                         success = false)
                 )
             }.subscribe()
-        projectDeletedSagas.remove(project.id)
+        projectDeletedSagas.remove(project.id!!)
+    }
+
+    fun sagaComplete(saga: ProjectDeletedSaga) {
+        logger.debug("Completed delete saga for project {}/{}", saga.getProjectData().name, saga.getProjectData().id)
+        projectDeletedSagas.remove(saga.getProjectData().id!!)
+        jmsTemplate.convertAndSend(
+            EventTopic.SagaEvents.topic,
+            ProjectSagaEvent(
+                referenceValue = saga.getProjectData().id!!,
+                projectSagaStatus = ProjectSagaStatus.COMPLETE,
+                success = false)
+        )
     }
 
 }

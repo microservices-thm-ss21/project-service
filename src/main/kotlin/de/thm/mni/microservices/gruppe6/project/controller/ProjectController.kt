@@ -64,7 +64,7 @@ class ProjectController(@Autowired val projectService: ProjectDbService) {
         .onErrorResume { Mono.error(coverUnexpectedException(it)) }
 
     /**
-     * Deletes project with given id
+     * Deletes project with given id by initiating a saga.
      * @param projectId: project id
      */
     @DeleteMapping("{projectId}")
