@@ -137,6 +137,11 @@ class ProjectDeletedSagaService(
                 projectSagaStatus = ProjectSagaStatus.COMPLETE,
                 success = false)
         )
+        jmsTemplate.convertAndSend(
+            EventTopic.DataEvents.topic,
+            ProjectDataEvent(DataEventCode.DELETED, saga.project.id!!)
+        )
+
     }
 
 }
