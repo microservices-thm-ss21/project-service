@@ -2,6 +2,16 @@
 
 Service responsible for managing projects and associated users.
 
+== Structure
+
+* A user is required to be logged in to send any requests to the project-service.
+* There are three different Member-Roles:
+** Admin: Every permission for the project.
+** Support: Same permissions as User.
+** User: Add members, change name of project, update issues of project.
+* The creator is automatically added with Member-Admin-Role and as Project-Creator
+
+
 == Tech-Stack
 The project service is based on the Spring Framework with Webflux and Netty as its HTTP-server stack and ActiveMQ connections as message broker. The project service is connected to dedicated PostgreSQL database, where data is persisted.
 
@@ -11,16 +21,27 @@ The database holds all information of projects, its members - users associated w
 == HTTP API
 The API is documented as OpenAPI Specification in https://git.thm.de/microservicesss21/project-service/-/blob/master/project-service.yaml[project-service.yaml]
 
+To test the API please use the https://git.thm.de/microservicesss21/orga/-/blob/master/doc/Micro-Services.project_service.postman_collection.json[Postman collection].
+
 == Message-Broker / ActiveMQ
-The service sends events when...
+
+The service sends events when:
+
+1. microservices.dataEvents: +
+ - Project: Created, Updated or deleted
+
+2. microservices.domainEvents: +
+Extended events with additional information when:
+ - The role of a user changed (added, updated, removed)
+ - The name of the project changed
 
 The project service is listening to two ActiveMQ topics:
 
-=== microservices.dataEvents
+1. microservices.dataEvents: +
 This service is interested in creation and deletion events for users within the system to update its local table with user ids.
 All other events are ignored.
 
-=== microservices.sagaEvents
+2. microservices.sagaEvents: +
 This service is interested in ProjectDeleteSagaEvents containing results of other services involved in saga transactions orchestrated by this service.
 
 == Saga
