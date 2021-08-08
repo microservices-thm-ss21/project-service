@@ -1,4 +1,12 @@
 = Project Service
 
-Please refer to the [README](https://git.thm.de/microservicesss21/orga/-/blob/master/README.md) of the Orga-Repository for more information.
+== Tech-Stack
+The project service is based on the Spring Framework with Webflux and Netty as its HTTP-server stack and ActiveMQ connections as message broker. The project service is connected to dedicated PostgreSQL database, where data is persistet.
 
+== Database
+
+
+
+
+
+Please refer to the https://git.thm.de/microservicesss21/orga/-/blob/master/README.md[README] of the Orga-Repository for more information.
