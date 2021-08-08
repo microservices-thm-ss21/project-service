@@ -91,13 +91,14 @@ class MemberDbService(
                     }
                 } else {
                     addNewMember(projectId, requester, userId, role)
+                        .publishEventChangedMemberRole(projectId,null, role.name)
                 }
             }
     }
 
     /**
      * Create a new member and return it. Checks if the requester has the permission to do so.
-     * Sends all necessary events.
+     * Does not send any notifications
      * @param projectId
      * @param requester
      * @param userId of user that should be added
@@ -110,20 +111,43 @@ class MemberDbService(
             .switchIfEmpty(Mono.error(ServiceException(HttpStatus.NOT_FOUND, "User not existing")))
             .flatMap {
                 memberRepo.save(Member(null, projectId, userId, role.name))
-            }.publishOn(Schedulers.boundedElastic())
-            .map {
-                sender.convertAndSend(
-                    EventTopic.DomainEvents_ProjectService.topic,
-                    DomainEventChangedStringUUID(
-                        DomainEventCode.PROJECT_CHANGED_MEMBER,
-                        projectId,
-                        userId,
-                        null,
-                        it.projectRole
-                    )
-                )
-                it
             }
+            .publishOn(Schedulers.boundedElastic())
+    }
+
+    /**
+     * Sends the notifications of the creation of a new member
+     * @param projectId
+     * @param oldRole Old Role in the Project or null
+     * @param newRole New role in the Project or null
+     */
+    fun Mono<Member>.publishEventChangedMemberRole(projectId: UUID, oldRole: String?, newRole: String?): Mono<Member>{
+        return this
+            .flatMap { publishEventChangedMemberRole(projectId, it, oldRole, newRole) }
+    }
+
+    /**
+     * Sends the notifications of the creation of a new member
+     * @param projectId
+     * @param member New Member Object
+     * @param oldRole Old role in the project or null
+     * @param newRole new role in the project or null
+     */
+    fun publishEventChangedMemberRole(projectId: UUID, member: Member, oldRole: String?, newRole: String?): Mono<Member> {
+        return Mono.just(member)
+                .map {
+                    sender.convertAndSend(
+                            EventTopic.DomainEvents_ProjectService.topic,
+                            DomainEventChangedStringUUID(
+                                    DomainEventCode.PROJECT_CHANGED_MEMBER,
+                                    projectId,
+                                    member.userId,
+                                    oldRole,
+                                    newRole
+                            )
+                    )
+                    it
+                }
     }
 
     /**
@@ -180,18 +204,8 @@ class MemberDbService(
                     }
             }
             .publishOn(Schedulers.boundedElastic())
-            .map {
-                sender.convertAndSend(
-                    EventTopic.DomainEvents_ProjectService.topic,
-                    DomainEventChangedStringUUID(
-                        DomainEventCode.PROJECT_CHANGED_MEMBER,
-                        projectId,
-                        userId,
-                        it.first.projectRole,
-                        it.second.projectRole
-                    )
-                )
-                it.second
+            .flatMap {
+                publishEventChangedMemberRole(projectId, it.second, it.first.projectRole, it.second.projectRole)
             }
     }
 
@@ -229,9 +243,12 @@ class MemberDbService(
                             it.t1.creatorId == user.id!! || it.t2.projectRole == ProjectRole.ADMIN.name || user.globalRole == GlobalRole.ADMIN.name
                         }.map { projectId }
                 } else {
-                    Mono.just(projectId).filter {
-                        user.globalRole == GlobalRole.ADMIN.name
-                    }
+                    projectRepo.findById(projectId)
+                            .filter {
+                                it.creatorId == user.id!! || user.globalRole == GlobalRole.ADMIN.name
+                            }.map {
+                                projectId
+                            }
                 }
             }.switchIfEmpty {
                 Mono.error(ServiceException(HttpStatus.FORBIDDEN, "No permissions"))
