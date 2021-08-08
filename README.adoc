@@ -1,4 +1,5 @@
 = Project Service
+Service responsible for managing projects and associated users.
 
 == Tech-Stack
 The project service is based on the Spring Framework with Webflux and Netty as its HTTP-server stack and ActiveMQ connections as message broker. The project service is connected to dedicated PostgreSQL database, where data is persisted.
