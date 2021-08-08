@@ -21,7 +21,7 @@ The database holds all information of projects, its members - users associated w
 == HTTP API
 The API is documented as https://git.thm.de/microservicesss21/orga/-/tree/master/doc/apis[OpenAPI Specification]
 
-To test the API please use the https://git.thm.de/microservicesss21/orga/-/blob/master/doc/Micro-Services.project_service.postman_collection.json[Postman collection].
+To test the API please use the https://git.thm.de/microservicesss21/orga/-/blob/master/doc/apis/Micro-Services.postman_collection.json[Postman collection].
 
 == Message-Broker / ActiveMQ
 
