@@ -6,7 +6,6 @@ import de.thm.mni.microservices.gruppe6.lib.classes.projectService.ProjectRole
 import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
-import de.thm.mni.microservices.gruppe6.project.requests.Requester
 import de.thm.mni.microservices.gruppe6.project.saga.service.ProjectDeletedSagaService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -28,11 +27,10 @@ class ProjectDbServiceTests(
     @Mock private val projectRepository: ProjectRepository,
     @Mock private val memberService: MemberDbService,
     @Mock private val sender: JmsTemplate,
-    @Mock private val requester: Requester,
     @Mock private val projectDeletedSagaService: ProjectDeletedSagaService
 ) {
 
-    private val projectService = ProjectDbService(projectRepository, memberService, sender, requester, projectDeletedSagaService)
+    private val projectService = ProjectDbService(projectRepository, memberService, sender, projectDeletedSagaService)
 
     private fun createTestProject(name: String): Project {
         return Project(UUID.randomUUID(), name, UUID.randomUUID(), LocalDateTime.now())
@@ -171,11 +169,11 @@ class ProjectDbServiceTests(
         val project = createTestProject("test")
         val user = createTestUser()
         given(memberService.checkHardPermissions(project.id!!, user)).willReturn(Mono.just(project.id!!))
-        given(projectRepository.findById(project.id!!)).willReturn(Mono.just(project))
+        given(projectRepository.existsById(project.id!!)).willReturn(Mono.just(true))
         given(projectRepository.deleteById(project.id!!)).willReturn(Mono.empty())
         val projectId = projectService.deleteProject(project.id!!, user).block()
         assertThat(projectId == project.id)
-        verify(projectRepository, times(1)).deleteById(project.id!!)
+        verify(projectDeletedSagaService, times(1)).startSaga(project.id!!)
     }
 
 }

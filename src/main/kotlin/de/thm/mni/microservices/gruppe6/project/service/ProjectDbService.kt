@@ -6,7 +6,6 @@ import de.thm.mni.microservices.gruppe6.lib.classes.userService.User
 import de.thm.mni.microservices.gruppe6.lib.event.*
 import de.thm.mni.microservices.gruppe6.lib.exception.ServiceException
 import de.thm.mni.microservices.gruppe6.project.model.persistence.ProjectRepository
-import de.thm.mni.microservices.gruppe6.project.requests.Requester
 import de.thm.mni.microservices.gruppe6.project.saga.service.ProjectDeletedSagaService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -28,7 +27,6 @@ class ProjectDbService(
     @Autowired private val projectRepo: ProjectRepository,
     @Autowired private val memberDbService: MemberDbService,
     @Autowired private val sender: JmsTemplate,
-    @Autowired private val httpRequester: Requester,
     @Autowired private val projectDeletedSagaService: ProjectDeletedSagaService
 ) {
 
@@ -135,19 +133,11 @@ class ProjectDbService(
         logger.debug("deleteProject $projectId $requester")
         return memberDbService.checkHardPermissions(projectId, requester)
             .flatMap {
-                projectRepo.findById(projectId)
+                projectRepo.existsById(projectId)
             }.switchIfEmpty {
                 Mono.error(ServiceException(HttpStatus.NOT_FOUND, "Project does not exist"))
             }.doOnNext {
-                projectRepo.deleteById(it.id!!).thenReturn(it.id!!)
-            }.doOnNext(projectDeletedSagaService::startSaga)
-            .publishOn(Schedulers.boundedElastic())
-            .doOnNext {
-                sender.convertAndSend(
-                    EventTopic.DataEvents.topic,
-                    ProjectDataEvent(DataEventCode.DELETED, projectId)
-                )
+                projectDeletedSagaService.startSaga(projectId)
             }.thenReturn(projectId)
-
     }
 }

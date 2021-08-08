@@ -1,10 +1,9 @@
 package de.thm.mni.microservices.gruppe6.project.event
 
-
 import de.thm.mni.microservices.gruppe6.lib.event.DataEvent
-import de.thm.mni.microservices.gruppe6.lib.event.DeletedIssuesSagaEvent
 import de.thm.mni.microservices.gruppe6.lib.event.DomainEvent
 import de.thm.mni.microservices.gruppe6.lib.event.EventTopic
+import de.thm.mni.microservices.gruppe6.lib.event.ProjectSagaEvent
 import de.thm.mni.microservices.gruppe6.project.saga.service.ProjectDeletedSagaService
 import de.thm.mni.microservices.gruppe6.project.service.DataEventService
 import org.slf4j.Logger
@@ -59,10 +58,6 @@ class Receiver(
                         payload.code
                     )
                 }
-                is DeletedIssuesSagaEvent -> {
-                    logger.debug("Received DeletedIssuesSagaEvent reference {}/{} and id {}", payload.referenceType, payload.referenceValue, payload.success)
-                    projectDeletedSagaService.receiveSagaEvent(payload)
-                }
                 else -> {
                     logger.error(
                         "Received unknown ObjectMessage with payload type {} with id {}",
@@ -87,17 +82,11 @@ class Receiver(
     fun receiveSaga(message: Message) {
         try {
             if (message !is ObjectMessage) {
-                logger.error("Received unknown message type {} with id {}", message.jmsType, message.jmsMessageID)
                 return
             }
             when (val payload = message.`object`) {
-                is DeletedIssuesSagaEvent -> {
-                    logger.debug(
-                        "Received DeletedIssuesSagaEvent reference {}/{} and id {}",
-                        payload.referenceType,
-                        payload.referenceValue,
-                        payload.success
-                    )
+                is ProjectSagaEvent -> {
+                    logger.debug("Received ProjectSagaEvent reference {}/{} and with status {} and result {}", payload.referenceType, payload.referenceValue, payload.projectSagaStatus.name, payload.success)
                     projectDeletedSagaService.receiveSagaEvent(payload)
                 }
             }

@@ -1,15 +1,19 @@
 package de.thm.mni.microservices.gruppe6.project.saga.model
 
+import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Member
 import de.thm.mni.microservices.gruppe6.lib.classes.projectService.Project
 
+data class ProjectDeletedSaga(
+    private val project: Project,
+    ) {
 
-data class ProjectDeletedSaga(private val project: Project) {
+    lateinit var members: List<Member>
 
     var issuesDeleted = false
     var projectDeleted = true
+    var membersDeleted = true
 
-    fun restoreProject(): Project {
-        projectDeleted = false
+    fun getProjectData(): Project {
         return project
     }
 
@@ -18,7 +22,7 @@ data class ProjectDeletedSaga(private val project: Project) {
     }
 
     fun isComplete(): Boolean {
-        return issuesDeleted && projectDeleted
+        return issuesDeleted && projectDeleted && membersDeleted
     }
 
 }
